@@ -449,6 +449,173 @@
     textarea.answer.paper:focus {
       background-color: #fffef9;
     }
+    .admin-tabs {
+      display: flex;
+      gap: 8px;
+      margin: 0 0 18px;
+      flex-wrap: wrap;
+    }
+    .admin-tab {
+      border: 1px solid var(--line-strong);
+      background: var(--paper);
+      color: var(--ink);
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .admin-tab[aria-selected="true"] {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+    .grade-layout {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.4fr);
+      gap: 16px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .grade-layout { grid-template-columns: 1fr; }
+    }
+    .rubric-cat {
+      margin: 0 0 18px;
+      padding: 14px 14px 8px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--bg);
+    }
+    .rubric-cat-head h3 { margin: 0 0 4px; font-size: 1.05rem; }
+    .rubric-row {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 10px 0;
+    }
+    .rubric-row-title { margin-bottom: 8px; }
+    .rubric-levels {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 8px;
+      margin: 8px 0 12px;
+    }
+    .rubric-level {
+      text-align: left;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .rubric-level strong { font-size: 0.92rem; }
+    .rubric-level span { font-size: 0.75rem; color: var(--muted); }
+    .rubric-level em { font-style: normal; font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+    .rubric-level.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+      background: color-mix(in srgb, var(--primary) 6%, #fff);
+    }
+    .rubric-inputs { display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 10px; }
+    @media (max-width: 700px) { .rubric-inputs { grid-template-columns: 1fr; } }
+    .rubric-subtotal {
+      font-weight: 600;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin: 6px 0 2px;
+    }
+    .rubric-subtotal.ok, .ok-line { color: var(--ok-ink); }
+    .rubric-subtotal.fail, .fail-line { color: var(--danger); }
+    .grade-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+    .grade-total { font-size: 1.15rem; margin: 0 0 8px; }
+    .verdict {
+      display: inline-block;
+      font-weight: 700;
+      padding: 8px 14px;
+      border-radius: 999px;
+      margin: 0 0 10px;
+    }
+    .verdict-pass { background: var(--ok-bg); color: var(--ok-ink); }
+    .verdict-conditional { background: var(--warn-bg); color: var(--warn-ink); }
+    .verdict-fail { background: #fdecec; color: var(--danger); }
+    .answer-read {
+      white-space: pre-wrap;
+      background: #fffdf6;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 12px 14px;
+      max-height: 280px;
+      overflow: auto;
+      font-family: var(--font);
+      line-height: 1.7;
+    }
+    .editor-row {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      margin: 0 0 10px;
+      background: var(--bg);
+    }
+    .print-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      background: rgba(28, 25, 23, 0.45);
+      overflow: auto;
+      padding: 20px;
+    }
+    .print-overlay.show { display: block; }
+    .print-stage {
+      width: min(210mm, 100%);
+      margin: 0 auto;
+    }
+    .print-toolbar { margin: 0 0 12px; display: flex; gap: 8px; }
+    .print-sheet {
+      background: #fff;
+      color: #1c1917;
+      padding: 16mm 16mm 18mm;
+      min-height: 297mm;
+      box-shadow: var(--shadow);
+      font-size: 12.5px;
+      line-height: 1.5;
+    }
+    .print-head {
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr) 64px;
+      gap: 12px;
+      align-items: center;
+      border-bottom: 2px solid #9b1b30;
+      padding-bottom: 10px;
+      margin-bottom: 14px;
+    }
+    .print-head img { width: 64px; height: 64px; object-fit: contain; }
+    .print-head h1 { margin: 0; font-size: 1.15rem; }
+    .print-head p { margin: 2px 0 0; }
+    .print-sheet h2 { font-size: 1rem; margin: 16px 0 8px; }
+    .print-sheet table { width: 100%; border-collapse: collapse; margin: 0 0 12px; }
+    .print-sheet th, .print-sheet td {
+      border: 1px solid #d6d3d1;
+      padding: 6px 8px;
+      text-align: left;
+      vertical-align: top;
+    }
+    .print-meta td { border: 0; padding: 3px 0; }
+    .sign-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 28px; }
+    .sign-box { text-align: center; min-height: 110px; }
+    @media print {
+      body * { visibility: hidden; }
+      #gradePrintRoot, #gradePrintRoot * { visibility: visible; }
+      .no-print, .print-toolbar { display: none !important; }
+      .print-overlay { position: static; background: #fff; padding: 0; overflow: visible; display: block; }
+      .print-sheet { box-shadow: none; width: auto; min-height: auto; }
+      .print-stage { width: auto; }
+    }
+
     .hidden { display: none !important; }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
@@ -590,6 +757,11 @@
       </div>
     </div>
     <div id="adminPanel" class="hidden">
+      <nav class="admin-tabs" role="tablist" aria-label="เมนูแอดมิน">
+        <button type="button" class="admin-tab" id="tabSettingsBtn" role="tab" aria-selected="true">ตั้งค่า</button>
+        <button type="button" class="admin-tab" id="tabGradeBtn" role="tab" aria-selected="false">ให้คะแนน (Rubric)</button>
+      </nav>
+      <div id="adminSettingsTab">
       <section class="card admin-section">
         <h2>ธีมสี</h2>
         <div class="swatches" id="presets"></div>
@@ -619,8 +791,128 @@
         <button type="button" class="btn" id="resetAll">รีเซ็ตเป็นค่าเริ่มต้น</button>
         <p class="note" id="adminSaveNote"></p>
       </section>
+      </div>
+      <div id="adminGradeTab" class="hidden">
+        <section class="card admin-section">
+          <h2>โหมดการบันทึกคะแนน</h2>
+          <p class="note" id="gradeModeNote">ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script</p>
+          <div class="grid-fields">
+            <label class="field">
+              <span>รหัสผู้ดูแล (ADMIN_KEY) สำหรับโหมดส่วนกลาง — ไม่บังคับ</span>
+              <input type="password" id="gradeAdminKey" autocomplete="off" />
+            </label>
+          </div>
+          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
+            <button type="button" class="btn" id="gradeConnectBtn">เชื่อมต่อเพื่อดึงคำตอบ / บันทึกส่วนกลาง</button>
+          </div>
+          <p class="note" id="gradeConnectNote"></p>
+        </section>
+
+        <section class="card admin-section">
+          <h2>ผู้ให้คะแนน</h2>
+          <div class="grid-fields">
+            <label class="field"><span>ชื่อผู้ให้คะแนน</span><input id="graderName" autocomplete="name" /></label>
+            <label class="field"><span>บทบาท</span>
+              <input id="graderRole" list="graderRoles" placeholder="กรรมการสอบ / ประธานกรรมการ" />
+              <datalist id="graderRoles">
+                <option value="กรรมการสอบ"></option>
+                <option value="ประธานกรรมการ"></option>
+                <option value="ผู้ทรงคุณวุฒิ"></option>
+                <option value="อาจารย์ที่ปรึกษา"></option>
+              </datalist>
+            </label>
+          </div>
+        </section>
+
+        <section class="card admin-section">
+          <h2>นิสิตที่ให้คะแนน</h2>
+          <div class="grid-fields">
+            <label class="field"><span>รหัสนักศึกษา (10 หลัก)</span><input id="gradeSid" inputmode="numeric" maxlength="10" autocomplete="off" /></label>
+            <label class="field"><span>ชื่อ-นามสกุล</span><input id="gradeFullName" autocomplete="name" /></label>
+            <label class="field"><span>วิชา</span>
+              <select id="gradeSubject">
+                <option value="overall">ภาพรวม (ทั้งหลักสูตร)</option>
+                <option value="1">วิชาที่ 1</option>
+                <option value="2">วิชาที่ 2</option>
+                <option value="3">วิชาที่ 3</option>
+              </select>
+            </label>
+          </div>
+          <p class="err" id="gradeStudentErr"></p>
+          <div id="submissionPickWrap" class="hidden" style="margin-top:12px">
+            <label class="field"><span>เลือกจากคำตอบที่ส่งแล้ว</span>
+              <select id="submissionPick"><option value="">— เลือกนิสิต —</option></select>
+            </label>
+          </div>
+        </section>
+
+        <div class="grade-layout">
+          <section class="card admin-section" id="answerPaneCard">
+            <h2>คำตอบของนิสิต</h2>
+            <div id="answerPane"><p class="note">ยังไม่มีคำตอบในโหมดนี้ กรอกชื่อและรหัสแล้วให้คะแนนได้เลย หรือเชื่อมต่อ Apps Script รุ่นที่ 2 เพื่อดึงคำตอบจากชีต</p></div>
+          </section>
+          <div>
+            <section class="card admin-section">
+              <h2>รูบริกการให้คะแนน</h2>
+              <p class="note" id="rubricSourceNote"></p>
+              <div id="rubricForm"></div>
+              <div class="grid-fields" style="margin-top:14px">
+                <label class="field" id="oralPassField">
+                  <span>ผ่านการประเมินการสอบปากเปล่า (ข้อ 5.4)</span>
+                  <select id="gradeOralPass">
+                    <option value="na">ไม่ใช้กับวิชานี้ / ยังไม่สอบปากเปล่า</option>
+                    <option value="yes">ผ่าน</option>
+                    <option value="no">ไม่ผ่าน</option>
+                  </select>
+                </label>
+                <label class="field">
+                  <span>ข้อบกพร่องร้ายแรงด้านจริยธรรมการวิจัยหรือความซื่อสัตย์ทางวิชาการ (ข้อ 5.4)</span>
+                  <select id="gradeEthics">
+                    <option value="ok">ไม่มีข้อบกพร่องร้ายแรง</option>
+                    <option value="fail">มีข้อบกพร่องร้ายแรง</option>
+                  </select>
+                </label>
+              </div>
+              <label class="field" style="margin-top:12px">
+                <span>หมายเหตุรวม</span>
+                <textarea id="gradeOverallComment" rows="3"></textarea>
+              </label>
+            </section>
+            <section class="card admin-section" id="gradeSummaryCard">
+              <h2>สรุปคะแนนและผลการประเมิน</h2>
+              <div id="gradeSummary"></div>
+              <div class="grade-actions">
+                <button type="button" class="btn primary" id="gradeSaveBtn">บันทึกคะแนน</button>
+                <button type="button" class="btn" id="gradeNewBtn">ให้คะแนนนิสิตใหม่</button>
+                <button type="button" class="btn" id="gradePrintBtn">เปิดใบคะแนน (พิมพ์ A4)</button>
+                <button type="button" class="btn" id="gradeCsvBtn">ส่งออก CSV</button>
+              </div>
+              <p class="note" id="gradeSaveNote"></p>
+            </section>
+          </div>
+        </div>
+
+        <section class="card admin-section">
+          <h2>รายชื่อที่ให้คะแนนแล้ว</h2>
+          <div id="gradeList"></div>
+        </section>
+
+        <section class="card admin-section">
+          <h2>แก้ไขเกณฑ์การประเมิน (ค่าเริ่มต้นจากเอกสารแนวทาง QE)</h2>
+          <p class="note">ปรับเกณฑ์ ตัวบรรยาย น้ำหนัก และเกณฑ์ผ่านได้ แล้วกดบันทึกเกณฑ์ ค่าเริ่มต้นมาจากข้อ 2, ข้อ 5.1, ข้อ 5.2, ข้อ 5.3 และข้อ 5.4 ของเอกสารแนวทางการสอบวัดคุณสมบัติ (QE) สาขาวิชาพุทธจิตวิทยา</p>
+          <div id="rubricEditor"></div>
+          <div class="grade-actions">
+            <button type="button" class="btn primary" id="rubricSaveBtn">บันทึกเกณฑ์</button>
+            <button type="button" class="btn" id="rubricResetBtn">รีเซ็ตเกณฑ์เป็นค่าจากเอกสาร</button>
+          </div>
+          <p class="note" id="rubricSaveNote"></p>
+        </section>
+      </div>
+
     </div>
   </div>
+
+  <div id="gradePrintRoot"></div>
 
   <div class="overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
     <div class="modal">
@@ -1839,7 +2131,10 @@
         const ok = sessionStorage.getItem(AUTH_KEY) === "1";
         $("adminGate").classList.toggle("hidden", ok);
         $("adminPanel").classList.toggle("hidden", !ok);
-        if (ok) renderAdmin();
+        if (ok) {
+          renderAdmin();
+          if (adminTab === "grade") setAdminTab("grade");
+        }
         applyLogos();
       } else {
         renderStudent();
@@ -1984,6 +2279,1001 @@
       r.readAsDataURL(file);
     }
 
+    const RUBRIC_STORE = "qe-exam-rubric-config-v1";
+    const GRADES_STORE = "qe-exam-grades-v1";
+    const GRADER_STORE = "qe-exam-grader-v1";
+
+    function defaultRubric() {
+      return {
+        source: "แนวทางการสอบวัดคุณสมบัติ (QE) ระดับปริญญาเอก สาขาวิชาพุทธจิตวิทยา, ข้อ 2 และข้อ 5.1–5.4",
+        formats: [
+          { id: "written", percent: 50, nameTh: "การสอบข้อเขียน", nameEn: "Written Examination" },
+          { id: "research", percent: 20, nameTh: "การวิเคราะห์และสังเคราะห์งานวิจัย", nameEn: "Research Analytical Assignment" },
+          { id: "oral", percent: 30, nameTh: "การสอบปากเปล่า", nameEn: "Oral Examination" }
+        ],
+        formatNoteTh: "คะแนนตามรูปแบบการสอบเป็นการประเมินวิธีการแสดงสมรรถนะ ส่วนคะแนน 4 หมวดเนื้อหาในข้อ 2 เป็นกรอบกำหนดขอบเขตความรู้ที่ต้องครอบคลุมในการออกข้อสอบ (ข้อ 5.1)",
+        formatNoteEn: "Format weights assess how competence is demonstrated. The four content categories in section 2 frame the knowledge the exam must cover (section 5.1).",
+        categories: [
+          { id: "c1", no: 1, nameTh: "หมวดที่ 1 พุทธธรรมและพุทธจิตวิทยา", nameEn: "Buddhist Philosophy and Buddhist Psychology", blueprintMax: 20, format: "ข้อเขียน", minPercent: 60 },
+          { id: "c2", no: 2, nameTh: "หมวดที่ 2 ทฤษฎีจิตวิทยาและการบูรณาการศาสตร์", nameEn: "Psychological Theories and Interdisciplinary Integration", blueprintMax: 30, format: "ข้อเขียน", minPercent: 60 },
+          { id: "c3", no: 3, nameTh: "หมวดที่ 3 ระเบียบวิธีวิจัยและสถิติ", nameEn: "Research Methodology and Statistical Analysis", blueprintMax: 20, format: "ข้อเขียน", minPercent: 60 },
+          { id: "c4", no: 4, nameTh: "หมวดที่ 4 การคิดเชิงวิพากษ์และการสร้างองค์ความรู้ใหม่", nameEn: "Critical Thinking and Original Knowledge Creation", blueprintMax: 30, format: "ปากเปล่า", minPercent: 60 },
+          { id: "c5", no: 5, nameTh: "เกณฑ์ร่วม: ความพร้อมในการวิจัยอิสระและจริยธรรม", nameEn: "Shared criterion: readiness for independent research and ethics", blueprintMax: null, format: "", minPercent: 60 }
+        ],
+        criteria: [
+          { id: "r1", categoryId: "c1", nameTh: "ความรู้ด้านพุทธธรรมและพุทธจิตวิทยา", nameEn: "Knowledge of Buddhist doctrine and Buddhist psychology", measureTh: "ความถูกต้องและความเข้าใจเชิงลึก", measureEn: "Accuracy and in-depth understanding", max: 25 },
+          { id: "r2", categoryId: "c2", nameTh: "ความรู้ด้านทฤษฎีจิตวิทยาและการบูรณาการ", nameEn: "Knowledge of psychological theory and integration", measureTh: "การเชื่อมโยงและเปรียบเทียบศาสตร์", measureEn: "Connecting and comparing disciplines", max: 15 },
+          { id: "r3", categoryId: "c3", nameTh: "ระเบียบวิธีวิจัยและสถิติ", nameEn: "Research methodology and statistics", measureTh: "การเลือกใช้และการวิเคราะห์อย่างถูกต้อง", measureEn: "Appropriate selection and correct analysis", max: 20 },
+          { id: "r4", categoryId: "c4", nameTh: "การคิดวิเคราะห์และวิพากษ์", nameEn: "Analytical and critical thinking", measureTh: "การใช้เหตุผลและประเมินข้อจำกัด", measureEn: "Reasoning and evaluating limitations", max: 15 },
+          { id: "r5", categoryId: "c4", nameTh: "การสังเคราะห์และสร้างองค์ความรู้ใหม่", nameEn: "Synthesis and creation of new knowledge", measureTh: "ความใหม่และคุณค่าทางวิชาการ", measureEn: "Originality and academic value", max: 15 },
+          { id: "r6", categoryId: "c5", nameTh: "ความพร้อมในการวิจัยอิสระและจริยธรรม", nameEn: "Readiness for independent research and ethics", measureTh: "ความเป็นไปได้และความรับผิดชอบทางวิชาการ", measureEn: "Feasibility and academic responsibility", max: 10 }
+        ],
+        levels: [
+          { id: "excellent", nameTh: "ดีเยี่ยม", nameEn: "Excellent", minPercent: 90, maxPercent: 100, descriptorTh: "มีความรู้ลึกซึ้ง วิเคราะห์และสังเคราะห์ได้อย่างโดดเด่น มีศักยภาพสร้างองค์ความรู้ใหม่", descriptorEn: "Deep knowledge; outstanding analysis and synthesis; potential to create new knowledge" },
+          { id: "verygood", nameTh: "ดีมาก", nameEn: "Very good", minPercent: 80, maxPercent: 89, descriptorTh: "มีความรู้และทักษะครบถ้วน สามารถประยุกต์ใช้และทำวิจัยอิสระได้", descriptorEn: "Complete knowledge and skills; can apply them and conduct independent research" },
+          { id: "good", nameTh: "ดี", nameEn: "Good", minPercent: 75, maxPercent: 79, descriptorTh: "มีความรู้และทักษะอยู่ในเกณฑ์ที่ยอมรับได้ พร้อมพัฒนาสู่การทำดุษฎีนิพนธ์", descriptorEn: "Acceptable knowledge and skills; ready to progress toward the dissertation" },
+          { id: "improve", nameTh: "ต้องปรับปรุง", nameEn: "Needs improvement", minPercent: 60, maxPercent: 74, descriptorTh: "ยังมีข้อบกพร่องบางด้าน ต้องปรับปรุงหรือสอบเพิ่มเติมตามมติกรรมการ", descriptorEn: "Some weaknesses remain; must improve or take a further exam as the committee decides" },
+          { id: "fail", nameTh: "ไม่ผ่าน", nameEn: "Fail", minPercent: 0, maxPercent: 59, descriptorTh: "ยังไม่แสดงสมรรถนะตามเกณฑ์ที่กำหนด", descriptorEn: "Has not yet demonstrated the required competencies" }
+        ],
+        thresholds: {
+          passMin: 75,
+          conditionalMin: 70,
+          categoryMinPercent: 60
+        }
+      };
+    }
+
+    function loadRubricConfig() {
+      try {
+        const raw = localStorage.getItem(RUBRIC_STORE);
+        if (!raw) return defaultRubric();
+        const parsed = JSON.parse(raw);
+        const base = defaultRubric();
+        if (!parsed || !Array.isArray(parsed.criteria) || !parsed.criteria.length) return base;
+        return Object.assign({}, base, parsed, {
+          formats: Array.isArray(parsed.formats) && parsed.formats.length ? parsed.formats : base.formats,
+          categories: Array.isArray(parsed.categories) && parsed.categories.length ? parsed.categories : base.categories,
+          criteria: parsed.criteria,
+          levels: Array.isArray(parsed.levels) && parsed.levels.length ? parsed.levels : base.levels,
+          thresholds: Object.assign({}, base.thresholds, parsed.thresholds || {})
+        });
+      } catch (err) {
+        return defaultRubric();
+      }
+    }
+
+    function saveRubricConfig() {
+      localStorage.setItem(RUBRIC_STORE, JSON.stringify(rubricConfig));
+    }
+
+    function loadGrades() {
+      try {
+        const raw = localStorage.getItem(GRADES_STORE);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (err) {
+        return [];
+      }
+    }
+
+    function saveGrades() {
+      localStorage.setItem(GRADES_STORE, JSON.stringify(gradeRecords));
+    }
+
+    let rubricConfig = loadRubricConfig();
+    let gradeRecords = loadGrades();
+    let adminTab = "settings";
+    let centralMode = false;
+    let centralSubmissions = [];
+    let currentGradeId = "";
+    let gradeScores = {};
+    let gradeComments = {};
+    let selectedSubmission = null;
+
+    function rubricLang() {
+      return state.lang === "en" ? "en" : "th";
+    }
+
+    function rubricName(obj, key) {
+      const lang = rubricLang();
+      if (lang === "en") return obj[key + "En"] || obj[key + "Th"] || "";
+      return obj[key + "Th"] || obj[key + "En"] || "";
+    }
+
+    function criterionMax(c) {
+      const n = Number(c && c.max);
+      return n > 0 ? n : 0;
+    }
+
+    function categoryCriteria(catId) {
+      return (rubricConfig.criteria || []).filter(function (c) { return c.categoryId === catId; });
+    }
+
+    function categoryScoringMax(cat) {
+      return categoryCriteria(cat.id).reduce(function (sum, c) { return sum + criterionMax(c); }, 0);
+    }
+
+    function categoryMinScore(cat) {
+      const pct = Number(cat.minPercent != null ? cat.minPercent : rubricConfig.thresholds.categoryMinPercent) || 60;
+      return roundScore((pct / 100) * categoryScoringMax(cat));
+    }
+
+    function roundScore(n) {
+      return Math.round(Number(n) * 100) / 100;
+    }
+
+    function clampScore(value, max) {
+      if (value === "" || value == null || isNaN(Number(value))) return null;
+      const n = Number(value);
+      if (n < 0) return 0;
+      if (max >= 0 && n > max) return max;
+      return roundScore(n);
+    }
+
+    function percentOf(score, max) {
+      if (max <= 0 || score == null) return null;
+      return (Number(score) / max) * 100;
+    }
+
+    function levelForPercent(pct) {
+      if (pct == null) return null;
+      const levels = rubricConfig.levels || [];
+      for (let i = 0; i < levels.length; i++) {
+        const lv = levels[i];
+        if (pct >= Number(lv.minPercent) && pct <= Number(lv.maxPercent)) return lv;
+      }
+      return levels[levels.length - 1] || null;
+    }
+
+    function levelForScore(score, max) {
+      return levelForPercent(percentOf(score, max));
+    }
+
+    function suggestedScore(level, max) {
+      const mid = (Number(level.minPercent) + Number(level.maxPercent)) / 2;
+      return clampScore((mid / 100) * max, max);
+    }
+
+    function computeGradeState() {
+      const cats = (rubricConfig.categories || []).map(function (cat) {
+        const list = categoryCriteria(cat.id);
+        const max = categoryScoringMax(cat);
+        const score = list.reduce(function (sum, c) {
+          const v = clampScore(gradeScores[c.id], criterionMax(c));
+          return sum + (v == null ? 0 : v);
+        }, 0);
+        const filled = list.some(function (c) { return clampScore(gradeScores[c.id], criterionMax(c)) != null; });
+        const min = categoryMinScore(cat);
+        return {
+          cat: cat,
+          score: roundScore(score),
+          max: max,
+          min: min,
+          filled: filled,
+          passed: max <= 0 ? true : score + 1e-9 >= min
+        };
+      });
+      const totalMax = (rubricConfig.criteria || []).reduce(function (sum, c) { return sum + criterionMax(c); }, 0);
+      const total = (rubricConfig.criteria || []).reduce(function (sum, c) {
+        const v = clampScore(gradeScores[c.id], criterionMax(c));
+        return sum + (v == null ? 0 : v);
+      }, 0);
+      const oral = ($("gradeOralPass") && $("gradeOralPass").value) || "na";
+      const ethics = ($("gradeEthics") && $("gradeEthics").value) || "ok";
+      return {
+        categories: cats,
+        total: roundScore(total),
+        totalMax: totalMax,
+        oral: oral,
+        ethics: ethics,
+        verdict: decideVerdict(roundScore(total), cats, oral, ethics)
+      };
+    }
+
+    function decideVerdict(total, categories, oral, ethics) {
+      const passMin = Number(rubricConfig.thresholds.passMin) || 75;
+      const condMin = Number(rubricConfig.thresholds.conditionalMin) || 70;
+      const minFail = categories.some(function (c) { return c.max > 0 && !c.passed; });
+      const ethicsFail = ethics === "fail";
+      const oralFail = oral === "no";
+      if (ethicsFail || oralFail || minFail || total < condMin) {
+        const reasons = [];
+        if (total < condMin) reasons.push("คะแนนรวมต่ำกว่า " + condMin);
+        if (minFail) reasons.push("ไม่ผ่านเกณฑ์ขั้นต่ำรายหมวด (ข้อ 5.4: แต่ละหมวดเนื้อหาต้องไม่น้อยกว่า 60%)");
+        if (oralFail) reasons.push("ไม่ผ่านการประเมินการสอบปากเปล่า (ข้อ 5.4)");
+        if (ethicsFail) reasons.push("มีข้อบกพร่องร้ายแรงด้านจริยธรรมการวิจัยหรือความซื่อสัตย์ทางวิชาการ (ข้อ 5.4)");
+        return { code: "fail", labelTh: "ไม่ผ่าน", labelEn: "Fail", reasons: reasons };
+      }
+      if (total >= passMin) {
+        return { code: "pass", labelTh: "ผ่าน", labelEn: "Pass", reasons: ["คะแนนรวมไม่น้อยกว่า " + passMin + " และผ่านเกณฑ์ขั้นต่ำรายหมวด (ข้อ 5.4)"] };
+      }
+      return {
+        code: "conditional",
+        labelTh: "ผ่านแบบมีเงื่อนไข",
+        labelEn: "Conditional pass",
+        reasons: [
+          "คะแนนรวม " + condMin + "–" + (passMin - 1) + " ตามข้อ 5.4 (ผ่านโดยมีเงื่อนไข): มีความรู้พื้นฐานและศักยภาพในการวิจัย แต่ยังมีจุดอ่อนที่ต้องแก้ไข ให้ปรับปรุงงานหรือสอบเพิ่มเติมเฉพาะด้านตามมติคณะกรรมการ และต้องดำเนินการให้แล้วเสร็จภายในระยะเวลาที่หลักสูตรกำหนด"
+        ]
+      };
+    }
+
+    function currentSubjectLabel() {
+      const v = ($("gradeSubject") && $("gradeSubject").value) || "overall";
+      if (v === "overall") return rubricLang() === "en" ? "Overall" : "ภาพรวม (ทั้งหลักสูตร)";
+      const i = Number(v) - 1;
+      const q = config.questions[i];
+      if (!q) return (rubricLang() === "en" ? "Subject " : "วิชาที่ ") + v;
+      const title = rubricLang() === "en" ? (q.titleEn || q.titleTh) : (q.titleTh || q.titleEn);
+      return (rubricLang() === "en" ? "Subject " : "วิชาที่ ") + v + (title ? " — " + title : "");
+    }
+
+    function setAdminTab(tab) {
+      adminTab = tab;
+      const settings = $("adminSettingsTab");
+      const grade = $("adminGradeTab");
+      if (settings) settings.classList.toggle("hidden", tab !== "settings");
+      if (grade) grade.classList.toggle("hidden", tab !== "grade");
+      const b1 = $("tabSettingsBtn");
+      const b2 = $("tabGradeBtn");
+      if (b1) b1.setAttribute("aria-selected", String(tab === "settings"));
+      if (b2) b2.setAttribute("aria-selected", String(tab === "grade"));
+      if (tab === "grade") {
+        renderRubricForm();
+        renderRubricEditor();
+        renderGradeList();
+        renderAnswerPane();
+        updateGradeSummary();
+      }
+    }
+
+    function renderRubricSourceNote() {
+      const el = $("rubricSourceNote");
+      if (!el) return;
+      el.textContent = "ค่าเริ่มต้นจากเอกสาร: 4 หมวดเนื้อหาข้อ 2 (20/30/20/30) · รูบริกข้อ 5.2 · ระดับคุณภาพข้อ 5.3 · เกณฑ์ตัดสินข้อ 5.4 · สัดส่วนรูปแบบข้อ 5.1 (50/20/30) ขั้นต่ำ 60% คิดจากคะแนนเต็มของเกณฑ์ 5.2 ในแต่ละหมวด เพราะน้ำหนักข้อ 2 กับข้อ 5.2 ในเอกสารไม่เท่ากันทุกหมวด";
+    }
+
+    function renderRubricForm() {
+      const box = $("rubricForm");
+      if (!box) return;
+      renderRubricSourceNote();
+      const lang = rubricLang();
+      box.innerHTML = "";
+      const fmt = document.createElement("p");
+      fmt.className = "note";
+      fmt.textContent = (lang === "en" ? "Section 5.1 format weights: " : "สัดส่วนตามรูปแบบการสอบ (ข้อ 5.1): ") +
+        (rubricConfig.formats || []).map(function (f) {
+          return f.percent + "% " + (lang === "en" ? f.nameEn : f.nameTh);
+        }).join(" · ");
+      box.appendChild(fmt);
+
+      (rubricConfig.categories || []).forEach(function (cat) {
+        const list = categoryCriteria(cat.id);
+        if (!list.length) return;
+        const wrap = document.createElement("div");
+        wrap.className = "rubric-cat";
+        const scoringMax = categoryScoringMax(cat);
+        const min = categoryMinScore(cat);
+        const head = document.createElement("div");
+        head.className = "rubric-cat-head";
+        const bp = cat.blueprintMax != null ? (" · " + (lang === "en" ? "Section 2 weight: " : "สัดส่วนโครงสร้างเนื้อหาข้อ 2: ") + cat.blueprintMax + (lang === "en" ? " points" : " คะแนน") + (cat.format ? " (" + cat.format + ")" : "")) : "";
+        head.innerHTML = "<h3>" + escapeHtml(rubricName(cat, "name")) + "</h3>" +
+          "<p class='note'>เกณฑ์ 5.2 ในหมวดนี้ " + scoringMax + " คะแนน · ขั้นต่ำ " + (cat.minPercent || 60) + "% = " + min + " คะแนน" + bp + "</p>";
+        wrap.appendChild(head);
+        list.forEach(function (crit) {
+          wrap.appendChild(renderCriterionRow(crit, lang));
+        });
+        const sub = document.createElement("div");
+        sub.className = "rubric-subtotal";
+        sub.id = "catSub-" + cat.id;
+        wrap.appendChild(sub);
+        box.appendChild(wrap);
+      });
+      updateGradeSummary();
+    }
+
+    function escapeHtml(s) {
+      return String(s == null ? "" : s)
+        .replace(/&/g, "&")
+        .replace(/</g, "<")
+        .replace(/>/g, ">")
+        .replace(/"/g, """);
+    }
+
+    function renderCriterionRow(crit, lang) {
+      const max = criterionMax(crit);
+      const row = document.createElement("div");
+      row.className = "rubric-row";
+      row.dataset.cid = crit.id;
+      const title = document.createElement("div");
+      title.className = "rubric-row-title";
+      title.innerHTML = "<strong>" + escapeHtml(rubricName(crit, "name")) + "</strong>" +
+        " <span class='pill'>สูงสุด " + max + "</span>" +
+        "<div class='note'>" + escapeHtml((lang === "en" ? "What is assessed: " : "สิ่งที่ต้องการวัด: ") + rubricName(crit, "measure")) + "</div>";
+      row.appendChild(title);
+
+      const levels = document.createElement("div");
+      levels.className = "rubric-levels";
+      (rubricConfig.levels || []).forEach(function (lv) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "rubric-level";
+        b.dataset.level = lv.id;
+        const bandMin = roundScore((Number(lv.minPercent) / 100) * max);
+        const bandMax = roundScore((Number(lv.maxPercent) / 100) * max);
+        b.innerHTML = "<strong>" + escapeHtml(rubricName(lv, "name")) + "</strong>" +
+          "<span>" + lv.minPercent + "–" + (lv.maxPercent < 100 && lv.id !== "excellent" ? lv.maxPercent : lv.maxPercent) + "% · " + bandMin + "–" + bandMax + "</span>" +
+          "<em>" + escapeHtml(rubricName(lv, "descriptor")) + "</em>";
+        b.addEventListener("click", function () {
+          gradeScores[crit.id] = suggestedScore(lv, max);
+          renderRubricForm();
+        });
+        levels.appendChild(b);
+      });
+      row.appendChild(levels);
+
+      const inputs = document.createElement("div");
+      inputs.className = "rubric-inputs";
+      const lab = document.createElement("label");
+      lab.className = "field";
+      lab.innerHTML = "<span>คะแนน (0–" + max + ")</span>";
+      const inp = document.createElement("input");
+      inp.type = "number";
+      inp.min = "0";
+      inp.max = String(max);
+      inp.step = "0.5";
+      inp.id = "score-" + crit.id;
+      if (gradeScores[crit.id] != null && gradeScores[crit.id] !== "") inp.value = String(gradeScores[crit.id]);
+      inp.addEventListener("input", function () {
+        const v = inp.value;
+        if (v === "") { gradeScores[crit.id] = null; updateGradeSummary(); markLevelButtons(row, crit, max); return; }
+        const n = Number(v);
+        if (isNaN(n)) return;
+        if (n > max) inp.value = String(max);
+        if (n < 0) inp.value = "0";
+        gradeScores[crit.id] = clampScore(inp.value, max);
+        updateGradeSummary();
+        markLevelButtons(row, crit, max);
+      });
+      lab.appendChild(inp);
+      inputs.appendChild(lab);
+      const comm = document.createElement("label");
+      comm.className = "field";
+      comm.innerHTML = "<span>ความเห็นรายเกณฑ์</span>";
+      const ta = document.createElement("textarea");
+      ta.rows = 2;
+      ta.id = "comment-" + crit.id;
+      ta.value = gradeComments[crit.id] || "";
+      ta.addEventListener("input", function () { gradeComments[crit.id] = ta.value; });
+      comm.appendChild(ta);
+      inputs.appendChild(comm);
+      row.appendChild(inputs);
+      markLevelButtons(row, crit, max);
+      return row;
+    }
+
+    function markLevelButtons(row, crit, max) {
+      const lv = levelForScore(gradeScores[crit.id], max);
+      row.querySelectorAll(".rubric-level").forEach(function (b) {
+        b.classList.toggle("active", !!(lv && b.dataset.level === lv.id));
+      });
+    }
+
+    function updateGradeSummary() {
+      const st = computeGradeState();
+      (st.categories || []).forEach(function (c) {
+        const el = $("catSub-" + c.cat.id);
+        if (!el) return;
+        const ok = c.passed;
+        el.className = "rubric-subtotal " + (ok ? "ok" : "fail");
+        el.textContent = "รวมหมวด " + c.score + " / " + c.max + " · ขั้นต่ำ " + c.min + " · " + (ok ? "ผ่านเกณฑ์ขั้นต่ำ" : "ไม่ผ่านเกณฑ์ขั้นต่ำ");
+      });
+      const box = $("gradeSummary");
+      if (!box) return;
+      const v = st.verdict;
+      const label = rubricLang() === "en" ? v.labelEn : v.labelTh;
+      box.innerHTML = "";
+      const total = document.createElement("p");
+      total.className = "grade-total";
+      total.innerHTML = "<strong>คะแนนรวม " + st.total + " / " + st.totalMax + "</strong>";
+      box.appendChild(total);
+      const badge = document.createElement("div");
+      badge.className = "verdict verdict-" + v.code;
+      badge.id = "gradeVerdict";
+      badge.textContent = label;
+      box.appendChild(badge);
+      const ul = document.createElement("ul");
+      ul.className = "note";
+      v.reasons.forEach(function (r) {
+        const li = document.createElement("li");
+        li.textContent = r;
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      const catBox = document.createElement("div");
+      catBox.className = "grade-cat-checks";
+      st.categories.forEach(function (c) {
+        const p = document.createElement("p");
+        p.className = c.passed ? "ok-line" : "fail-line";
+        p.textContent = rubricName(c.cat, "name") + ": " + c.score + "/" + c.max + (c.passed ? " ผ่านขั้นต่ำ" : " ไม่ผ่านขั้นต่ำ");
+        catBox.appendChild(p);
+      });
+      box.appendChild(catBox);
+
+      (rubricConfig.criteria || []).forEach(function (crit) {
+        const row = document.querySelector('.rubric-row[data-cid="' + crit.id + '"]');
+        if (row) markLevelButtons(row, crit, criterionMax(crit));
+      });
+    }
+
+    function collectGradeRecord() {
+      const st = computeGradeState();
+      const sid = ($("gradeSid") && $("gradeSid").value || "").replace(/\D/g, "").slice(0, 10);
+      const name = ($("gradeFullName") && $("gradeFullName").value || "").trim();
+      const scores = {};
+      (rubricConfig.criteria || []).forEach(function (c) {
+        scores[c.id] = {
+          score: clampScore(gradeScores[c.id], criterionMax(c)),
+          max: criterionMax(c),
+          comment: gradeComments[c.id] || "",
+          level: (levelForScore(gradeScores[c.id], criterionMax(c)) || {}).id || ""
+        };
+      });
+      return {
+        id: currentGradeId || ("G-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 6)),
+        savedAt: fmtNow(),
+        graderName: ($("graderName") && $("graderName").value || "").trim(),
+        graderRole: ($("graderRole") && $("graderRole").value || "").trim(),
+        studentId: sid,
+        fullName: name,
+        subject: ($("gradeSubject") && $("gradeSubject").value) || "overall",
+        subjectLabel: currentSubjectLabel(),
+        scores: scores,
+        comments: ($("gradeOverallComment") && $("gradeOverallComment").value) || "",
+        oralPass: st.oral,
+        ethicsOk: st.ethics,
+        total: st.total,
+        totalMax: st.totalMax,
+        verdict: st.verdict.code,
+        verdictLabel: st.verdict.labelTh,
+        categoryChecks: st.categories.map(function (c) {
+          return { id: c.cat.id, name: c.cat.nameTh, score: c.score, max: c.max, min: c.min, passed: c.passed };
+        }),
+        rubricSource: rubricConfig.source
+      };
+    }
+
+    function validateGradeForm() {
+      const sid = ($("gradeSid") && $("gradeSid").value || "").replace(/\D/g, "");
+      const name = ($("gradeFullName") && $("gradeFullName").value || "").trim();
+      const err = $("gradeStudentErr");
+      if (!/^\d{10}$/.test(sid) || !name) {
+        if (err) err.textContent = "กรุณากรอกรหัสนักศึกษา 10 หลักและชื่อ-นามสกุลก่อนบันทึก";
+        return false;
+      }
+      if (err) err.textContent = "";
+      return true;
+    }
+
+    function applyGradeRecord(rec) {
+      if (!rec) return;
+      currentGradeId = rec.id || "";
+      if ($("graderName") && rec.graderName) $("graderName").value = rec.graderName;
+      if ($("graderRole") && rec.graderRole) $("graderRole").value = rec.graderRole;
+      if ($("gradeSid")) $("gradeSid").value = rec.studentId || "";
+      if ($("gradeFullName")) $("gradeFullName").value = rec.fullName || "";
+      if ($("gradeSubject") && rec.subject) $("gradeSubject").value = rec.subject;
+      if ($("gradeOverallComment")) $("gradeOverallComment").value = rec.comments || "";
+      if ($("gradeOralPass")) $("gradeOralPass").value = rec.oralPass || "na";
+      if ($("gradeEthics")) $("gradeEthics").value = rec.ethicsOk || "ok";
+      gradeScores = {};
+      gradeComments = {};
+      Object.keys(rec.scores || {}).forEach(function (id) {
+        gradeScores[id] = rec.scores[id] && rec.scores[id].score;
+        gradeComments[id] = rec.scores[id] && rec.scores[id].comment || "";
+      });
+      renderRubricForm();
+      renderAnswerPane();
+    }
+
+    function blankGradeForm() {
+      currentGradeId = "";
+      gradeScores = {};
+      gradeComments = {};
+      selectedSubmission = null;
+      if ($("gradeSid")) $("gradeSid").value = "";
+      if ($("gradeFullName")) $("gradeFullName").value = "";
+      if ($("gradeOverallComment")) $("gradeOverallComment").value = "";
+      if ($("gradeOralPass")) $("gradeOralPass").value = (($("gradeSubject") && $("gradeSubject").value) === "overall") ? "yes" : "na";
+      if ($("gradeEthics")) $("gradeEthics").value = "ok";
+      if ($("gradeStudentErr")) $("gradeStudentErr").textContent = "";
+      if ($("gradeSaveNote")) $("gradeSaveNote").textContent = "";
+      renderRubricForm();
+      renderAnswerPane();
+    }
+
+    function upsertGrade(rec) {
+      const i = gradeRecords.findIndex(function (g) { return g.id === rec.id; });
+      if (i >= 0) gradeRecords[i] = rec;
+      else gradeRecords.unshift(rec);
+      saveGrades();
+    }
+
+    function gradesToCsv(rows) {
+      const criteria = rubricConfig.criteria || [];
+      const cats = rubricConfig.categories || [];
+      const headers = [
+        "ประทับเวลา", "ชื่อผู้ให้คะแนน", "บทบาท", "รหัสนักศึกษา", "ชื่อ-นามสกุล", "วิชา", "ผลการประเมิน", "คะแนนรวม", "คะแนนเต็ม"
+      ];
+      cats.forEach(function (c) {
+        headers.push("รวมหมวด: " + c.nameTh);
+        headers.push("ขั้นต่ำหมวด: " + c.nameTh);
+        headers.push("ผ่านขั้นต่ำ: " + c.nameTh);
+      });
+      criteria.forEach(function (c) {
+        headers.push("คะแนน: " + c.nameTh);
+        headers.push("ความเห็น: " + c.nameTh);
+      });
+      headers.push("ผ่านปากเปล่า", "จริยธรรม", "หมายเหตุรวม");
+
+      function cell(v) {
+        const s = v == null ? "" : String(v);
+        if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+        return s;
+      }
+      const lines = [headers.map(cell).join(",")];
+      (rows || gradeRecords).forEach(function (g) {
+        const map = {};
+        (g.categoryChecks || []).forEach(function (c) { map[c.id] = c; });
+        const cols = [
+          g.savedAt, g.graderName, g.graderRole, g.studentId, g.fullName, g.subjectLabel || g.subject,
+          g.verdictLabel || g.verdict, g.total, g.totalMax
+        ];
+        cats.forEach(function (c) {
+          const x = map[c.id] || {};
+          cols.push(x.score != null ? x.score : "");
+          cols.push(x.min != null ? x.min : "");
+          cols.push(x.passed == null ? "" : (x.passed ? "ผ่าน" : "ไม่ผ่าน"));
+        });
+        criteria.forEach(function (c) {
+          const x = (g.scores && g.scores[c.id]) || {};
+          cols.push(x.score != null ? x.score : "");
+          cols.push(x.comment || "");
+        });
+        cols.push(g.oralPass, g.ethicsOk, g.comments);
+        lines.push(cols.map(cell).join(","));
+      });
+      return "\uFEFF" + lines.join("\r\n");
+    }
+
+    function downloadCsv() {
+      const csv = gradesToCsv(gradeRecords);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "QE-2569-grades.csv";
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+
+    function renderGradeList() {
+      const box = $("gradeList");
+      if (!box) return;
+      if (!gradeRecords.length) {
+        box.innerHTML = "<p class='note'>ยังไม่มีรายการที่บันทึกในเครื่องนี้</p>";
+        return;
+      }
+      const table = document.createElement("table");
+      table.innerHTML = "<thead><tr><th>นิสิต</th><th>วิชา</th><th>รวม</th><th>ผล</th><th>ผู้ให้คะแนน</th><th></th></tr></thead>";
+      const tb = document.createElement("tbody");
+      gradeRecords.forEach(function (g) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td>" + escapeHtml((g.fullName || "") + " · " + (g.studentId || "")) + "</td>" +
+          "<td>" + escapeHtml(g.subjectLabel || g.subject || "") + "</td>" +
+          "<td>" + escapeHtml(String(g.total != null ? g.total : "")) + "</td>" +
+          "<td>" + escapeHtml(g.verdictLabel || g.verdict || "") + "</td>" +
+          "<td>" + escapeHtml(g.graderName || "") + "</td>";
+        const td = document.createElement("td");
+        const edit = document.createElement("button");
+        edit.type = "button";
+        edit.className = "btn";
+        edit.textContent = "แก้ไข";
+        edit.addEventListener("click", function () { applyGradeRecord(g); window.scrollTo({ top: 0, behavior: "smooth" }); });
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "btn";
+        del.textContent = "ลบในเครื่องนี้";
+        del.addEventListener("click", function () {
+          if (!confirm("ลบรายการนี้จากเครื่องนี้เท่านั้น?")) return;
+          gradeRecords = gradeRecords.filter(function (x) { return x.id !== g.id; });
+          saveGrades();
+          renderGradeList();
+        });
+        td.appendChild(edit);
+        td.appendChild(del);
+        tr.appendChild(td);
+        tb.appendChild(tr);
+      });
+      table.appendChild(tb);
+      const scroller = document.createElement("div");
+      scroller.className = "table-scroll";
+      scroller.appendChild(table);
+      box.innerHTML = "";
+      box.appendChild(scroller);
+    }
+
+    function renderAnswerPane() {
+      const box = $("answerPane");
+      if (!box) return;
+      const sid = ($("gradeSid") && $("gradeSid").value || "").trim();
+      let sub = selectedSubmission;
+      if (!sub && sid) {
+        sub = (centralSubmissions || []).find(function (s) { return String(s.studentId) === sid; }) || null;
+      }
+      if (!sub) {
+        box.innerHTML = "<p class='note'>ยังไม่มีคำตอบในโหมดนี้ กรอกชื่อและรหัสแล้วให้คะแนนได้เลย หรือเชื่อมต่อ Apps Script รุ่นที่ 2 เพื่อดึงคำตอบจากชีต</p>";
+        return;
+      }
+      const subj = ($("gradeSubject") && $("gradeSubject").value) || "overall";
+      const blocks = [];
+      const qs = [
+        { n: 1, text: sub.question1 },
+        { n: 2, text: sub.question2 },
+        { n: 3, text: sub.question3 }
+      ];
+      qs.forEach(function (q) {
+        if (subj !== "overall" && String(q.n) !== String(subj)) return;
+        const title = (config.questions[q.n - 1] && (state.lang === "en" ? config.questions[q.n - 1].titleEn : config.questions[q.n - 1].titleTh)) || ("วิชาที่ " + q.n);
+        blocks.push("<article class='answer-block'><h3>วิชาที่ " + q.n + " — " + escapeHtml(title) + "</h3><pre class='answer-read'>" + escapeHtml(q.text || "—") + "</pre></article>");
+      });
+      box.innerHTML = "<p class='note'>" + escapeHtml((sub.fullName || "") + " · " + (sub.studentId || "") + (sub.submitTime ? " · ส่งเมื่อ " + sub.submitTime : "")) + "</p>" + blocks.join("");
+    }
+
+    function renderSubmissionPick() {
+      const wrap = $("submissionPickWrap");
+      const sel = $("submissionPick");
+      if (!wrap || !sel) return;
+      const has = centralMode && centralSubmissions.length;
+      wrap.classList.toggle("hidden", !has);
+      if (!has) return;
+      const cur = sel.value;
+      sel.innerHTML = "<option value=''>— เลือกนิสิต —</option>";
+      centralSubmissions.forEach(function (s, i) {
+        const opt = document.createElement("option");
+        opt.value = String(i);
+        opt.textContent = (s.fullName || "") + " · " + (s.studentId || "") + (s.submitTime ? " · " + s.submitTime : "");
+        sel.appendChild(opt);
+      });
+      if (cur) sel.value = cur;
+    }
+
+    function renderRubricEditor() {
+      const box = $("rubricEditor");
+      if (!box) return;
+      box.innerHTML = "";
+      const th = document.createElement("div");
+      th.className = "grid-fields";
+      th.innerHTML = "<label class='field'><span>เกณฑ์ผ่าน (คะแนนรวม ข้อ 5.4)</span></label>";
+      function numField(label, obj, key) {
+        const lab = document.createElement("label");
+        lab.className = "field";
+        lab.innerHTML = "<span>" + label + "</span>";
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.step = "1";
+        inp.value = obj[key];
+        inp.addEventListener("input", function () { obj[key] = Number(inp.value); });
+        lab.appendChild(inp);
+        return lab;
+      }
+      const trow = document.createElement("div");
+      trow.className = "grid-fields";
+      trow.appendChild(numField("คะแนนขึ้นไปถือว่าผ่าน", rubricConfig.thresholds, "passMin"));
+      trow.appendChild(numField("คะแนนขั้นต่ำของผ่านแบบมีเงื่อนไข", rubricConfig.thresholds, "conditionalMin"));
+      trow.appendChild(numField("ร้อยละขั้นต่ำรายหมวด", rubricConfig.thresholds, "categoryMinPercent"));
+      box.appendChild(trow);
+
+      const h2 = document.createElement("h3");
+      h2.textContent = "หมวดเนื้อหา (ข้อ 2)";
+      box.appendChild(h2);
+      (rubricConfig.categories || []).forEach(function (cat, i) {
+        const card = document.createElement("div");
+        card.className = "editor-row";
+        const grid = document.createElement("div");
+        grid.className = "grid-fields";
+        [["nameTh", "ชื่อหมวด (ไทย)"], ["nameEn", "Category (English)"]].forEach(function (pair) {
+          const lab = document.createElement("label");
+          lab.className = "field";
+          lab.innerHTML = "<span>" + pair[1] + "</span>";
+          const inp = document.createElement("input");
+          inp.value = cat[pair[0]] || "";
+          inp.addEventListener("input", function () { rubricConfig.categories[i][pair[0]] = inp.value; });
+          lab.appendChild(inp);
+          grid.appendChild(lab);
+        });
+        const bp = document.createElement("label");
+        bp.className = "field";
+        bp.innerHTML = "<span>สัดส่วนข้อ 2 (คะแนน)</span>";
+        const bpIn = document.createElement("input");
+        bpIn.type = "number";
+        bpIn.value = cat.blueprintMax == null ? "" : cat.blueprintMax;
+        bpIn.addEventListener("input", function () {
+          rubricConfig.categories[i].blueprintMax = bpIn.value === "" ? null : Number(bpIn.value);
+        });
+        bp.appendChild(bpIn);
+        grid.appendChild(bp);
+        const minp = document.createElement("label");
+        minp.className = "field";
+        minp.innerHTML = "<span>ขั้นต่ำของหมวด (%)</span>";
+        const minIn = document.createElement("input");
+        minIn.type = "number";
+        minIn.value = cat.minPercent != null ? cat.minPercent : 60;
+        minIn.addEventListener("input", function () { rubricConfig.categories[i].minPercent = Number(minIn.value); });
+        minp.appendChild(minIn);
+        grid.appendChild(minp);
+        card.appendChild(grid);
+        box.appendChild(card);
+      });
+
+      const h3 = document.createElement("h3");
+      h3.textContent = "เกณฑ์รูบริก (ข้อ 5.2)";
+      box.appendChild(h3);
+      (rubricConfig.criteria || []).forEach(function (crit, i) {
+        const card = document.createElement("div");
+        card.className = "editor-row";
+        const grid = document.createElement("div");
+        grid.className = "grid-fields";
+        [["nameTh", "ชื่อเกณฑ์ (ไทย)"], ["nameEn", "Criterion (English)"], ["measureTh", "สิ่งที่ต้องการวัด (ไทย)"], ["measureEn", "What is assessed (English)"]].forEach(function (pair) {
+          const lab = document.createElement("label");
+          lab.className = "field";
+          lab.innerHTML = "<span>" + pair[1] + "</span>";
+          const ta = document.createElement("textarea");
+          ta.rows = 2;
+          ta.value = crit[pair[0]] || "";
+          ta.addEventListener("input", function () { rubricConfig.criteria[i][pair[0]] = ta.value; });
+          lab.appendChild(ta);
+          grid.appendChild(lab);
+        });
+        const mx = document.createElement("label");
+        mx.className = "field";
+        mx.innerHTML = "<span>คะแนนเต็ม (น้ำหนักข้อ 5.2)</span>";
+        const mxIn = document.createElement("input");
+        mxIn.type = "number";
+        mxIn.min = "0";
+        mxIn.step = "1";
+        mxIn.value = crit.max;
+        mxIn.addEventListener("input", function () { rubricConfig.criteria[i].max = Number(mxIn.value || 0); });
+        mx.appendChild(mxIn);
+        grid.appendChild(mx);
+        const cat = document.createElement("label");
+        cat.className = "field";
+        cat.innerHTML = "<span>หมวดที่สังกัด</span>";
+        const sel = document.createElement("select");
+        (rubricConfig.categories || []).forEach(function (c) {
+          const opt = document.createElement("option");
+          opt.value = c.id;
+          opt.textContent = c.nameTh;
+          if (c.id === crit.categoryId) opt.selected = true;
+          sel.appendChild(opt);
+        });
+        sel.addEventListener("change", function () { rubricConfig.criteria[i].categoryId = sel.value; });
+        cat.appendChild(sel);
+        grid.appendChild(cat);
+        card.appendChild(grid);
+        box.appendChild(card);
+      });
+
+      const h4 = document.createElement("h3");
+      h4.textContent = "ระดับคุณภาพและคำบรรยาย (ข้อ 5.3)";
+      box.appendChild(h4);
+      (rubricConfig.levels || []).forEach(function (lv, i) {
+        const card = document.createElement("div");
+        card.className = "editor-row";
+        const grid = document.createElement("div");
+        grid.className = "grid-fields";
+        [["nameTh", "ชื่อระดับ (ไทย)"], ["nameEn", "Level (English)"], ["descriptorTh", "คำบรรยาย (ไทย)"], ["descriptorEn", "Descriptor (English)"]].forEach(function (pair) {
+          const lab = document.createElement("label");
+          lab.className = "field";
+          lab.innerHTML = "<span>" + pair[1] + "</span>";
+          const ta = pair[0].indexOf("descriptor") === 0 ? document.createElement("textarea") : document.createElement("input");
+          if (ta.tagName === "TEXTAREA") ta.rows = 2;
+          ta.value = lv[pair[0]] || "";
+          ta.addEventListener("input", function () { rubricConfig.levels[i][pair[0]] = ta.value; });
+          lab.appendChild(ta);
+          grid.appendChild(lab);
+        });
+        ["minPercent", "maxPercent"].forEach(function (key) {
+          const lab = document.createElement("label");
+          lab.className = "field";
+          lab.innerHTML = "<span>" + (key === "minPercent" ? "ร้อยละต่ำสุด" : "ร้อยละสูงสุด") + "</span>";
+          const inp = document.createElement("input");
+          inp.type = "number";
+          inp.value = lv[key];
+          inp.addEventListener("input", function () { rubricConfig.levels[i][key] = Number(inp.value); });
+          lab.appendChild(inp);
+          grid.appendChild(lab);
+        });
+        card.appendChild(grid);
+        box.appendChild(card);
+      });
+    }
+
+    function buildPrintSheet(rec) {
+      const stCats = rec.categoryChecks || [];
+      const criteria = rubricConfig.criteria || [];
+      const logoMcu = currentMcu();
+      const logoProg = currentProg();
+      let rows = "";
+      criteria.forEach(function (c) {
+        const s = (rec.scores && rec.scores[c.id]) || {};
+        const lv = levelForScore(s.score, criterionMax(c));
+        rows += "<tr><td>" + escapeHtml(c.nameTh) + "<div class='note'>" + escapeHtml(c.measureTh) + "</div></td>" +
+          "<td>" + escapeHtml(lv ? lv.nameTh : "") + "</td>" +
+          "<td>" + escapeHtml(s.score != null ? String(s.score) : "—") + " / " + criterionMax(c) + "</td>" +
+          "<td>" + escapeHtml(s.comment || "") + "</td></tr>";
+      });
+      let cats = "";
+      stCats.forEach(function (c) {
+        cats += "<tr><td>" + escapeHtml(c.name) + "</td><td>" + c.score + " / " + c.max + "</td><td>" + c.min + "</td><td>" + (c.passed ? "ผ่านขั้นต่ำ" : "ไม่ผ่านขั้นต่ำ") + "</td></tr>";
+      });
+      return '<div class="print-sheet" id="gradePrintSheet">' +
+        '<header class="print-head">' +
+        '<img src="' + logoMcu + '" alt="" />' +
+        "<div><h1>ใบให้คะแนนสอบวัดคุณสมบัติ (QE) 2569</h1>" +
+        "<p>หลักสูตรบัณฑิตศึกษา สาขาวิชาพุทธจิตวิทยา มหาวิทยาลัยมหาจุฬาลงกรณราชวิทยาลัย</p>" +
+        "<p>ตามแนวทางการสอบวัดคุณสมบัติ (QE) ข้อ 2 และข้อ 5.1–5.4</p></div>" +
+        '<img src="' + logoProg + '" alt="" />' +
+        "</header>" +
+        '<table class="print-meta"><tr>' +
+        "<td>นิสิต: <strong>" + escapeHtml(rec.fullName || "") + "</strong></td>" +
+        "<td>รหัส: <strong>" + escapeHtml(rec.studentId || "") + "</strong></td></tr>" +
+        "<tr><td>วิชา: " + escapeHtml(rec.subjectLabel || rec.subject || "") + "</td>" +
+        "<td>วันที่ให้คะแนน: " + escapeHtml(rec.savedAt || fmtNow()) + "</td></tr>" +
+        "<tr><td>ผู้ให้คะแนน: " + escapeHtml(rec.graderName || "") + "</td>" +
+        "<td>บทบาท: " + escapeHtml(rec.graderRole || "") + "</td></tr></table>" +
+        "<h2>คะแนนตามรูบริก (ข้อ 5.2)</h2>" +
+        "<table><thead><tr><th>เกณฑ์</th><th>ระดับ (ข้อ 5.3)</th><th>คะแนน</th><th>ความเห็น</th></tr></thead><tbody>" + rows + "</tbody></table>" +
+        "<h2>ขั้นต่ำรายหมวด (ข้อ 2 และข้อ 5.4)</h2>" +
+        "<table><thead><tr><th>หมวด</th><th>คะแนน</th><th>ขั้นต่ำ 60%</th><th>ผล</th></tr></thead><tbody>" + cats + "</tbody></table>" +
+        '<div class="print-verdict verdict verdict-' + escapeHtml(rec.verdict) + '">ผลการประเมิน: ' + escapeHtml(rec.verdictLabel || "") +
+        " · คะแนนรวม " + escapeHtml(String(rec.total)) + " / " + escapeHtml(String(rec.totalMax)) + "</div>" +
+        "<p>หมายเหตุ: " + escapeHtml(rec.comments || "—") + "</p>" +
+        "<p>ปากเปล่า: " + escapeHtml(rec.oralPass || "") + " · จริยธรรม: " + escapeHtml(rec.ethicsOk || "") + "</p>" +
+        '<div class="sign-row">' +
+        '<div class="sign-box">ลงชื่อผู้ให้คะแนน<br><br><br>.....................................................<br>( ' + escapeHtml(rec.graderName || "                    ") + " )<br>" + escapeHtml(rec.graderRole || "ผู้ให้คะแนน") + "</div>" +
+        "<div class='sign-box'>ลงชื่อประธานกรรมการ<br><br><br>.....................................................<br>(                                )<br>ประธานกรรมการสอบ QE</div>" +
+        "<div class='sign-box'>ลงชื่อกรรมการ<br><br><br>.....................................................<br>(                                )<br>กรรมการสอบ QE</div>" +
+        "</div></div>";
+    }
+
+    function openPrintSheet() {
+      if (!validateGradeForm()) return;
+      const rec = collectGradeRecord();
+      let host = $("gradePrintRoot");
+      if (!host) {
+        host = document.createElement("div");
+        host.id = "gradePrintRoot";
+        document.body.appendChild(host);
+      }
+      host.innerHTML = '<div class="print-overlay show" id="gradePrintOverlay"><div class="print-stage">' +
+        '<div class="print-toolbar no-print"><button type="button" class="btn primary" id="doPrintBtn">พิมพ์ / บันทึกเป็น PDF</button>' +
+        '<button type="button" class="btn" id="closePrintBtn">ปิด</button></div>' +
+        buildPrintSheet(rec) + "</div></div>";
+      $("doPrintBtn").addEventListener("click", function () { window.print(); });
+      $("closePrintBtn").addEventListener("click", function () { host.innerHTML = ""; });
+    }
+
+    function payloadFromGrade(rec) {
+      return {
+        action: "grade",
+        adminKey: ($("gradeAdminKey") && $("gradeAdminKey").value) || "",
+        graderName: rec.graderName,
+        graderRole: rec.graderRole,
+        studentId: rec.studentId,
+        fullName: rec.fullName,
+        subject: rec.subjectLabel || rec.subject,
+        total: String(rec.total),
+        verdict: rec.verdictLabel || rec.verdict,
+        categoryChecks: JSON.stringify(rec.categoryChecks || []),
+        criterionScores: JSON.stringify(rec.scores || {}),
+        comments: rec.comments,
+        oralPass: rec.oralPass,
+        ethicsOk: rec.ethicsOk,
+        gradeId: rec.id
+      };
+    }
+
+    async function postApps(body) {
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        redirect: "follow",
+        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        body: JSON.stringify(body)
+      });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch (err) { return { ok: false, error: text.slice(0, 200), raw: text, notJson: true }; }
+    }
+
+    async function connectCentral() {
+      const key = ($("gradeAdminKey") && $("gradeAdminKey").value) || "";
+      const note = $("gradeConnectNote");
+      const mode = $("gradeModeNote");
+      if (!key) {
+        centralMode = false;
+        if (note) note.textContent = "ยังไม่ได้ใส่รหัสผู้ดูแล จะใช้โหมดเครื่องนี้ต่อไป";
+        if (mode) mode.textContent = "ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script";
+        renderSubmissionPick();
+        return false;
+      }
+      if (note) note.textContent = "กำลังตรวจสอบปลายทาง...";
+      try {
+        const data = await postApps({ action: "list", adminKey: key });
+        if (data && data.ok && Array.isArray(data.submissions)) {
+          centralMode = true;
+          centralSubmissions = data.submissions;
+          if (note) note.textContent = "เชื่อมต่อได้แล้ว พบคำตอบ " + data.submissions.length + " รายการ จะดึงคำตอบมาไว้ข้างรูบริก และบันทึกคะแนนลงแท็บคะแนนเมื่อกดบันทึก";
+          if (mode) mode.textContent = "โหมดส่วนกลางพร้อมใช้ (Apps Script รุ่นที่ 2) — คะแนนจะถูกบันทึกทั้งในเครื่องนี้และลงชีต";
+          renderSubmissionPick();
+          renderAnswerPane();
+          return true;
+        }
+        centralMode = false;
+        const err = (data && data.error) ? data.error : "ปลายทางยังไม่รองรับ action list";
+        if (note) note.textContent = "ใช้โหมดเครื่องนี้: " + err;
+        if (mode) mode.textContent = "ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script";
+        renderSubmissionPick();
+        return false;
+      } catch (err) {
+        centralMode = false;
+        if (note) note.textContent = "เชื่อมต่อไม่ได้ จึงใช้โหมดเครื่องนี้: " + String(err && err.message ? err.message : err);
+        if (mode) mode.textContent = "ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script";
+        renderSubmissionPick();
+        return false;
+      }
+    }
+
+    async function saveCurrentGrade() {
+      if (!validateGradeForm()) return;
+      const rec = collectGradeRecord();
+      currentGradeId = rec.id;
+      upsertGrade(rec);
+      try {
+        localStorage.setItem(GRADER_STORE, JSON.stringify({
+          name: rec.graderName,
+          role: rec.graderRole
+        }));
+      } catch (err) {}
+      renderGradeList();
+      const note = $("gradeSaveNote");
+      if (!centralMode) {
+        if (note) note.textContent = "บันทึกในเครื่องนี้แล้ว " + rec.savedAt;
+        return rec;
+      }
+      if (note) note.textContent = "บันทึกในเครื่องนี้แล้ว กำลังส่งไปชีต...";
+      try {
+        const data = await postApps(payloadFromGrade(rec));
+        if (data && data.ok) {
+          if (note) note.textContent = "บันทึกในเครื่องนี้และลงแท็บคะแนนแถวที่ " + data.row + " แล้ว";
+        } else {
+          if (note) note.textContent = "บันทึกในเครื่องนี้แล้ว แต่ส่งไปชีตไม่สำเร็จ: " + ((data && data.error) || "ไม่ทราบสาเหตุ") + " — ข้อมูลยังอยู่ในเครื่องนี้";
+        }
+      } catch (err) {
+        if (note) note.textContent = "บันทึกในเครื่องนี้แล้ว แต่ส่งไปชีตไม่สำเร็จ: " + String(err && err.message ? err.message : err);
+      }
+      return rec;
+    }
+
+    window.__qeGrading = {
+      defaultRubric: defaultRubric,
+      compute: computeGradeState,
+      decideVerdict: decideVerdict,
+      gradesToCsv: gradesToCsv,
+      getRecords: function () { return gradeRecords.slice(); },
+      getConfig: function () { return rubricConfig; },
+      setScore: function (id, value) { gradeScores[id] = value; updateGradeSummary(); },
+      getScores: function () { return Object.assign({}, gradeScores); }
+    };
+
     function init() {
       applyTheme();
       applyLogos();
@@ -2061,6 +3351,56 @@
 
       $("btnBackStudent").addEventListener("click", () => { location.hash = ""; });
       $("adminOpenBtn").addEventListener("click", () => { location.hash = "admin"; });
+      if ($("tabSettingsBtn")) $("tabSettingsBtn").addEventListener("click", () => setAdminTab("settings"));
+      if ($("tabGradeBtn")) $("tabGradeBtn").addEventListener("click", () => setAdminTab("grade"));
+      if ($("gradeConnectBtn")) $("gradeConnectBtn").addEventListener("click", () => { connectCentral(); });
+      if ($("gradeSaveBtn")) $("gradeSaveBtn").addEventListener("click", () => { saveCurrentGrade(); });
+      if ($("gradeNewBtn")) $("gradeNewBtn").addEventListener("click", () => { blankGradeForm(); });
+      if ($("gradePrintBtn")) $("gradePrintBtn").addEventListener("click", () => { openPrintSheet(); });
+      if ($("gradeCsvBtn")) $("gradeCsvBtn").addEventListener("click", () => { downloadCsv(); });
+      if ($("rubricSaveBtn")) $("rubricSaveBtn").addEventListener("click", () => {
+        saveRubricConfig();
+        renderRubricForm();
+        renderRubricEditor();
+        if ($("rubricSaveNote")) $("rubricSaveNote").textContent = "บันทึกเกณฑ์ในเครื่องนี้แล้ว " + fmtNow();
+      });
+      if ($("rubricResetBtn")) $("rubricResetBtn").addEventListener("click", () => {
+        rubricConfig = defaultRubric();
+        saveRubricConfig();
+        renderRubricForm();
+        renderRubricEditor();
+        if ($("rubricSaveNote")) $("rubricSaveNote").textContent = "รีเซ็ตเกณฑ์เป็นค่าจากเอกสารแล้ว";
+      });
+      if ($("gradeSubject")) $("gradeSubject").addEventListener("change", () => {
+        if ($("gradeOralPass") && $("gradeSubject").value === "overall" && $("gradeOralPass").value === "na") {
+          $("gradeOralPass").value = "yes";
+        }
+        if ($("gradeOralPass") && $("gradeSubject").value !== "overall" && $("gradeOralPass").value === "yes") {
+          /* leave as chosen */
+        }
+        renderAnswerPane();
+        updateGradeSummary();
+      });
+      if ($("gradeOralPass")) $("gradeOralPass").addEventListener("change", updateGradeSummary);
+      if ($("gradeEthics")) $("gradeEthics").addEventListener("change", updateGradeSummary);
+      if ($("gradeSid")) $("gradeSid").addEventListener("input", () => {
+        $("gradeSid").value = $("gradeSid").value.replace(/\D/g, "").slice(0, 10);
+        renderAnswerPane();
+      });
+      if ($("submissionPick")) $("submissionPick").addEventListener("change", () => {
+        const i = Number($("submissionPick").value);
+        if (isNaN(i) || !centralSubmissions[i]) return;
+        selectedSubmission = centralSubmissions[i];
+        $("gradeSid").value = selectedSubmission.studentId || "";
+        $("gradeFullName").value = selectedSubmission.fullName || "";
+        renderAnswerPane();
+      });
+      try {
+        const g = JSON.parse(localStorage.getItem(GRADER_STORE) || "null");
+        if (g && $("graderName") && !$("graderName").value) $("graderName").value = g.name || "";
+        if (g && $("graderRole") && !$("graderRole").value) $("graderRole").value = g.role || "";
+      } catch (err) {}
+
       $("adminEnter").addEventListener("click", () => {
         if ($("adminPass").value === "MCU2569") {
           sessionStorage.setItem(AUTH_KEY, "1");
