@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>สอบ QE คุณสมบัติ 2569</title>
-  <!-- Hidden demo admin route: open this file with #admin (password: demo). -->
+  <!-- Admin route: open this file with #admin. -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
@@ -317,6 +317,29 @@
       padding: 6px 12px; border-radius: 999px;
     }
     .swatch[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+    .exam-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin: 8px 0 0;
+      padding: 4px 2px 0;
+    }
+    .admin-entry {
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 999px;
+      opacity: 0.7;
+    }
+    .admin-entry:hover {
+      background: var(--bg-subtle);
+      border-color: var(--line);
+      opacity: 1;
+    }
     .hidden { display: none !important; }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
@@ -409,6 +432,10 @@
       </div>
       <div id="result" style="margin-top:16px"></div>
     </section>
+
+    <footer class="exam-footer">
+      <button type="button" class="admin-entry" id="adminOpenBtn">แอดมิน</button>
+    </footer>
   </div>
 
   <div class="app hidden" id="adminApp">
@@ -427,7 +454,7 @@
     <div id="adminGate" class="card admin-gate">
       <span class="demo-flag">ตัวอย่างเท่านั้น</span>
       <h2>เข้าสู่ระบบแอดมิน</h2>
-      <p class="note">นี่เป็นประตูจำลองสำหรับเดโม ไม่ใช่ระบบยืนยันตัวตนจริง รหัสผ่านตัวอย่างคือ <strong>demo</strong></p>
+      <p class="note">กรุณากรอกรหัสผ่านเพื่อเข้าสู่ระบบแอดมิน</p>
       <label class="field" style="max-width:320px;margin-top:12px">
         <span>รหัสผ่าน</span>
         <input type="password" id="adminPass" autocomplete="off" />
@@ -556,7 +583,8 @@
       ["wordsChars", "นับคำ (ใส่ {words} และ {chars})"],
       ["pasteMeta", "นับการวาง (ใส่ {n})"],
       ["savedAt", "สถานะบันทึก (ใส่ {t})"],
-      ["notSaved", "ยังไม่บันทึก"]
+      ["notSaved", "ยังไม่บันทึก"],
+      ["adminBtn", "ปุ่มแอดมิน"]
     ];
 
     function defaultI18n() {
@@ -595,7 +623,8 @@
           wordsChars: "{words} คำ · {chars} ตัวอักษร",
           pasteMeta: "พยายามวาง: {n} ครั้ง",
           savedAt: "บันทึกแล้ว {t}",
-          notSaved: "ยังไม่บันทึก"
+          notSaved: "ยังไม่บันทึก",
+          adminBtn: "แอดมิน"
         },
         en: {
           appTitle: "QE Qualification Exam 2569",
@@ -631,7 +660,8 @@
           wordsChars: "{words} words · {chars} characters",
           pasteMeta: "Paste attempts: {n}",
           savedAt: "Saved at {t}",
-          notSaved: "Not yet saved"
+          notSaved: "Not yet saved",
+          adminBtn: "Admin"
         }
       };
     }
@@ -772,6 +802,7 @@
       $("confirmCancel").textContent = L.confirmCancel;
       $("confirmOk").textContent = L.confirmOk;
       $("savePill").textContent = state.lastSave ? fmt(L.savedAt, { t: state.lastSave }) : L.notSaved;
+      $("adminOpenBtn").textContent = L.adminBtn;
       renderQuestion();
       renderPasteBanner();
       validateSid(false);
@@ -1196,13 +1227,14 @@
       });
 
       $("btnBackStudent").addEventListener("click", () => { location.hash = ""; });
+      $("adminOpenBtn").addEventListener("click", () => { location.hash = "admin"; });
       $("adminEnter").addEventListener("click", () => {
-        if ($("adminPass").value === "demo") {
+        if ($("adminPass").value === "MCU2569") {
           sessionStorage.setItem(AUTH_KEY, "1");
           $("adminPassErr").textContent = "";
           showRoute();
         } else {
-          $("adminPassErr").textContent = "รหัสผ่านไม่ถูกต้อง (ตัวอย่างใช้ demo)";
+          $("adminPassErr").textContent = "รหัสผ่านไม่ถูกต้อง";
         }
       });
       $("adminPass").addEventListener("keydown", (e) => {
