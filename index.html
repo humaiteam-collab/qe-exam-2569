@@ -270,6 +270,7 @@
     td.wrap { white-space: pre-wrap; min-width: 160px; max-width: 280px; }
     .note { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
     .ok { background: var(--ok-bg); color: var(--ok-ink); padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; }
+    #result .err { font-size: 0.95rem; background: #fdecec; padding: 10px 12px; border-radius: 10px; margin-bottom: 10px; min-height: 0; }
     .overlay {
       position: fixed; inset: 0; z-index: 50;
       background: rgba(28, 25, 23, 0.4);
@@ -401,7 +402,7 @@
     <section class="card">
       <h2 id="headerHeading">หัวคอลัมน์ชีต QE-2569 ที่จะถูกเขียน</h2>
       <div class="table-scroll" id="headerRow"></div>
-      <p class="note" id="writeNote">ปุ่มส่งจะแสดงแถวที่จะเขียนเท่านั้น ไม่ได้ส่งไปยัง Google Sheet จริง</p>
+      <p class="note" id="writeNote">ปุ่มส่งจะแสดงแถวที่จะเขียนเท่านั้น ไม่ได้ส่งไปยัง Google Sheet จริง จนกว่าจะใส่ URL ของ Apps Script</p>
       <p class="note">เลื่อนตารางไปทางขวาเพื่อดูหัวคอลัมน์ครบทั้ง 20 ช่อง</p>
       <div style="margin-top:16px">
         <button type="button" class="btn primary" id="submitBtn">ส่งคำตอบ</button>
@@ -487,6 +488,8 @@
     const STORE_KEY = "qe-exam-demo-config-v1";
     const AUTH_KEY = "qe-exam-demo-admin";
     const DURATION_SEC = 3 * 60 * 60;
+    // Paste the deployed Google Apps Script web app URL here. Leave as PASTE_WEB_APP_URL to preview only.
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjG6S0R3BBd-IETu_UiUnNCQpGxt3Mag-io7C1SodJDbxIYXz8NurEsG82uyVgOh0/exec";
 
     const HEADERS = [
       "ประทับเวลา (Timestamp)",
@@ -531,14 +534,19 @@
       ["lblDate", "ป้ายวันที่สอบ"],
       ["lblStart", "ป้ายเวลาเริ่ม"],
       ["headerHeading", "หัวข้อตารางชีต"],
-      ["writeNote", "คำอธิบายการส่ง"],
+      ["writeNote", "คำอธิบายการส่ง (เมื่อยังไม่มี URL)"],
+      ["writeNoteLive", "คำอธิบายการส่ง (เมื่อเชื่อมชีตแล้ว)"],
       ["submit", "ปุ่มส่งคำตอบ"],
       ["prev", "ปุ่มก่อนหน้า"],
       ["next", "ปุ่มถัดไป"],
       ["needId", "คำเตือนกรอกข้อมูลไม่ครบ"],
-      ["submitted", "ข้อความหลังส่ง (ตัวอย่าง)"],
+      ["submitted", "ข้อความหลังส่ง (ตัวอย่าง / ยังไม่ส่งจริง)"],
+      ["submitting", "ข้อความกำลังส่ง"],
+      ["submitOk", "ข้อความส่งสำเร็จ (ใส่ {n} แทนเลขแถว)"],
+      ["submitErr", "ข้อความส่งไม่สำเร็จ (ใส่ {error})"],
       ["confirmTitle", "หัวข้อยืนยันการส่ง"],
-      ["confirmBody", "คำอธิบายยืนยันการส่ง"],
+      ["confirmBody", "คำอธิบายยืนยันการส่ง (เมื่อยังไม่มี URL)"],
+      ["confirmBodyLive", "คำอธิบายยืนยันการส่ง (เมื่อเชื่อมชีตแล้ว)"],
       ["confirmCancel", "ปุ่มยกเลิกยืนยัน"],
       ["confirmOk", "ปุ่มยืนยันส่ง"],
       ["pasteWarn", "คำเตือนเมื่อวางข้อความ (ใส่ {n} แทนจำนวนครั้ง)"],
@@ -565,14 +573,19 @@
           lblDate: "วันที่สอบ",
           lblStart: "เวลาเริ่มสอบ",
           headerHeading: "หัวคอลัมน์ชีต QE-2569 ที่จะถูกเขียน",
-          writeNote: "ปุ่มส่งจะแสดงแถวที่จะเขียนเท่านั้น ไม่ได้ส่งไปยัง Google Sheet จริง",
+          writeNote: "ปุ่มส่งจะแสดงแถวที่จะเขียนเท่านั้น ไม่ได้ส่งไปยัง Google Sheet จริง จนกว่าจะใส่ URL ของ Apps Script",
+          writeNoteLive: "เมื่อกดส่ง ระบบจะบันทึกคำตอบเป็นแถวใหม่ในชีต QE-2569",
           submit: "ส่งคำตอบ",
           prev: "ก่อนหน้า",
           next: "ถัดไป",
           needId: "กรุณากรอกรหัสนักศึกษา 10 หลักและชื่อ-นามสกุลก่อนส่ง",
-          submitted: "แสดงแถวที่จะเขียนลงชีต QE-2569 (ไม่ได้ส่งจริง)",
+          submitted: "แสดงแถวที่จะเขียนลงชีต QE-2569 (ไม่ได้ส่งจริง เพราะยังไม่ได้ใส่ URL ของ Apps Script)",
+          submitting: "กำลังส่งคำตอบไปยังชีต QE-2569...",
+          submitOk: "บันทึกลงชีต QE-2569 แถวที่ {n} แล้ว",
+          submitErr: "ส่งไม่สำเร็จ: {error} กรุณาลองอีกครั้ง",
           confirmTitle: "ยืนยันการส่งคำตอบ",
           confirmBody: "เมื่อส่งแล้วจะไม่สามารถแก้ไขได้ในตัวอย่างนี้ ระบบจะแสดงแถวที่จะบันทึกลงชีต QE-2569 แต่จะไม่ส่งออกไปจริง",
+          confirmBodyLive: "เมื่อส่งแล้วจะไม่สามารถแก้ไขคำตอบในหน้านี้ได้ ระบบจะบันทึกคำตอบลงชีต QE-2569",
           confirmCancel: "กลับไปตรวจ",
           confirmOk: "ยืนยันส่งคำตอบ",
           pasteWarn: "พิมพ์ได้เฉพาะจากแป้นพิมพ์ ระบบไม่รับการวาง คัดลอก หรือเมนูคลิกขวา (ครั้งที่ {n})",
@@ -596,14 +609,19 @@
           lblDate: "Exam date",
           lblStart: "Start time",
           headerHeading: "QE-2569 sheet headers that would be written",
-          writeNote: "Submit only previews the row. Nothing is sent to Google Sheets.",
+          writeNote: "Submit only previews the row until an Apps Script URL is pasted in.",
+          writeNoteLive: "Submit will append your answers as a new row in sheet QE-2569.",
           submit: "Submit answers",
           prev: "Previous",
           next: "Next",
           needId: "Please enter a 10-digit student ID and full name before submitting.",
-          submitted: "Row that would be written to QE-2569 (not actually sent)",
+          submitted: "Row that would be written to QE-2569 (not sent — Apps Script URL is not set)",
+          submitting: "Sending answers to sheet QE-2569...",
+          submitOk: "Saved to QE-2569 at row {n}",
+          submitErr: "Submit failed: {error} Please try again.",
           confirmTitle: "Confirm submission",
           confirmBody: "After submitting you cannot edit in this sample. The row for sheet QE-2569 will be shown, but nothing is sent.",
+          confirmBodyLive: "After submitting you cannot edit your answers on this page. Your answers will be saved to sheet QE-2569.",
           confirmCancel: "Review answers",
           confirmOk: "Confirm submit",
           pasteWarn: "Typing only. Paste, copy, and the context menu are blocked (attempt {n}).",
@@ -673,7 +691,8 @@
       sessionId: "QE-2569-S-" + Math.random().toString(36).slice(2, 8).toUpperCase(),
       startedAt: "",
       remaining: DURATION_SEC,
-      submitted: false
+      submitted: false,
+      sending: false
     };
 
     const $ = (id) => document.getElementById(id);
@@ -746,8 +765,9 @@
       $("lblDate").textContent = L.lblDate;
       $("lblStart").textContent = L.lblStart;
       $("headerHeading").textContent = L.headerHeading;
-      $("writeNote").textContent = L.writeNote;
-      $("submitBtn").textContent = L.submit;
+      $("writeNote").textContent = isAppsScriptConfigured() ? L.writeNoteLive : L.writeNote;
+      $("submitBtn").textContent = state.sending ? L.submitting : L.submit;
+      $("submitBtn").disabled = !!(state.submitted || state.sending);
       $("confirmTitle").textContent = L.confirmTitle;
       $("confirmCancel").textContent = L.confirmCancel;
       $("confirmOk").textContent = L.confirmOk;
@@ -865,54 +885,157 @@
       return "computer";
     }
 
-    function buildRow(status, submitTime) {
+    function isAppsScriptConfigured() {
+      const url = String(APPS_SCRIPT_URL || "").trim();
+      return url.length > 0 && url !== "PASTE_WEB_APP_URL";
+    }
+
+    function buildPayload(status, submitTime) {
       if (!state.startedAt) state.startedAt = fmtNow();
+      return {
+        fullName: $("fullName").value.trim(),
+        studentId: $("sid").value.trim(),
+        cohort: $("cohort").value.trim(),
+        level: $("level").value,
+        language: state.lang,
+        examDate: $("examDate").value,
+        startTime: $("startTime").value,
+        question1: state.answers[0],
+        question2: state.answers[1],
+        question3: state.answers[2],
+        lastAutosave: state.lastSave || "",
+        submitStatus: status,
+        submitTime: submitTime || "",
+        violationCount: String(state.pasteAttempts),
+        violationLog: state.pasteLog.join("; "),
+        pasteAttempts: String(state.pasteAttempts),
+        sessionId: state.sessionId,
+        device: deviceLabel(),
+        screen: window.innerWidth + "×" + window.innerHeight
+      };
+    }
+
+    function payloadToValues(payload, timestamp) {
       return [
-        state.startedAt,
-        $("fullName").value.trim(),
-        $("sid").value.trim(),
-        $("cohort").value.trim(),
-        $("level").value,
-        state.lang,
-        $("examDate").value,
-        $("startTime").value,
-        state.answers[0],
-        state.answers[1],
-        state.answers[2],
-        state.lastSave || "",
-        status,
-        submitTime || "",
-        String(state.pasteAttempts),
-        state.pasteLog.join("; "),
-        String(state.pasteAttempts),
-        state.sessionId,
-        deviceLabel(),
-        window.innerWidth + "×" + window.innerHeight
+        timestamp || "",
+        payload.fullName,
+        payload.studentId,
+        payload.cohort,
+        payload.level,
+        payload.language,
+        payload.examDate,
+        payload.startTime,
+        payload.question1,
+        payload.question2,
+        payload.question3,
+        payload.lastAutosave,
+        payload.submitStatus,
+        payload.submitTime,
+        payload.violationCount,
+        payload.violationLog,
+        payload.pasteAttempts,
+        payload.sessionId,
+        payload.device,
+        payload.screen
       ];
     }
 
-    function renderResult(values) {
+    function buildRow(status, submitTime, timestamp) {
+      return payloadToValues(buildPayload(status, submitTime), timestamp || submitTime || "");
+    }
+
+    function renderResult(values, outcome) {
       const L = t();
       const wrap = $("result");
       wrap.innerHTML = "";
       const note = document.createElement("div");
-      note.className = "ok";
-      note.textContent = L.submitted;
-      const table = document.createElement("table");
-      const head = document.createElement("tr");
-      const row = document.createElement("tr");
-      HEADERS.forEach((h, i) => {
-        const th = document.createElement("th"); th.textContent = h; head.appendChild(th);
-        const td = document.createElement("td"); td.textContent = values[i] || "";
-        if (i >= 8 && i <= 11) td.className = "wrap";
-        row.appendChild(td);
-      });
-      table.appendChild(head); table.appendChild(row);
-      const scroller = document.createElement("div");
-      scroller.className = "table-scroll";
-      scroller.appendChild(table);
+      if (!outcome || outcome.preview) {
+        note.className = "ok";
+        note.textContent = L.submitted;
+      } else if (outcome.pending) {
+        note.className = "ok";
+        note.textContent = L.submitting;
+      } else if (outcome.ok) {
+        note.className = "ok";
+        note.textContent = fmt(L.submitOk, { n: outcome.row });
+      } else {
+        note.className = "err";
+        note.textContent = fmt(L.submitErr, { error: outcome.error || "" });
+      }
       wrap.appendChild(note);
-      wrap.appendChild(scroller);
+      if (values) {
+        const table = document.createElement("table");
+        const head = document.createElement("tr");
+        const row = document.createElement("tr");
+        HEADERS.forEach((h, i) => {
+          const th = document.createElement("th"); th.textContent = h; head.appendChild(th);
+          const td = document.createElement("td"); td.textContent = values[i] || "";
+          if (i >= 8 && i <= 11) td.className = "wrap";
+          row.appendChild(td);
+        });
+        table.appendChild(head); table.appendChild(row);
+        const scroller = document.createElement("div");
+        scroller.className = "table-scroll";
+        scroller.appendChild(table);
+        wrap.appendChild(scroller);
+      }
+    }
+
+    async function submitExam() {
+      if (state.submitted || state.sending) return;
+      const submittedAt = fmtNow();
+      const status = "ส่งแล้ว";
+      const payload = buildPayload(status, submittedAt);
+      const values = payloadToValues(payload, submittedAt);
+
+      if (!isAppsScriptConfigured()) {
+        state.submitted = true;
+        $("submitBtn").disabled = true;
+        $("answer").readOnly = true;
+        renderResult(values, { preview: true });
+        $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
+
+      state.sending = true;
+      $("submitBtn").disabled = true;
+      $("submitBtn").textContent = t().submitting;
+      $("confirmOk").disabled = true;
+      renderResult(values, { pending: true });
+      $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+
+      try {
+        const res = await fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          redirect: "follow",
+          headers: { "Content-Type": "text/plain;charset=UTF-8" },
+          body: JSON.stringify(payload)
+        });
+        const text = await res.text();
+        let data = null;
+        try { data = JSON.parse(text); } catch (parseErr) { data = null; }
+        if (data && data.ok) {
+          state.submitted = true;
+          $("answer").readOnly = true;
+          $("submitBtn").disabled = true;
+          renderResult(values, { ok: true, row: data.row });
+        } else {
+          const errMsg = (data && data.error)
+            ? data.error
+            : (text ? text.slice(0, 200) : ("HTTP " + res.status));
+          $("submitBtn").disabled = false;
+          $("submitBtn").textContent = t().submit;
+          $("confirmOk").disabled = false;
+          renderResult(values, { ok: false, error: errMsg });
+        }
+      } catch (err) {
+        $("submitBtn").disabled = false;
+        $("submitBtn").textContent = t().submit;
+        $("confirmOk").disabled = false;
+        renderResult(values, { ok: false, error: String(err && err.message ? err.message : err) });
+      } finally {
+        state.sending = false;
+      }
     }
 
     function saveLocal() {
@@ -1052,22 +1175,21 @@
       });
 
       $("submitBtn").addEventListener("click", () => {
+        if (state.submitted || state.sending) return;
         if (!validateSid(true) || !$("fullName").value.trim()) {
           $("result").innerHTML = '<p class="err">' + t().needId + "</p>";
           return;
         }
         const answered = answeredCount();
-        $("confirmBody").textContent = t().confirmBody + " (" + answered + "/" + config.questions.length + ")";
+        const body = isAppsScriptConfigured() ? t().confirmBodyLive : t().confirmBody;
+        $("confirmBody").textContent = body + " (" + answered + "/" + config.questions.length + ")";
         $("confirmOverlay").classList.add("show");
       });
       $("confirmCancel").addEventListener("click", () => $("confirmOverlay").classList.remove("show"));
       $("confirmOk").addEventListener("click", () => {
+        if (state.submitted || state.sending) return;
         $("confirmOverlay").classList.remove("show");
-        const submittedAt = fmtNow();
-        const values = buildRow("ส่งแล้ว", submittedAt);
-        state.submitted = true;
-        renderResult(values);
-        $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+        submitExam();
       });
       $("confirmOverlay").addEventListener("click", (e) => {
         if (e.target === $("confirmOverlay")) $("confirmOverlay").classList.remove("show");
