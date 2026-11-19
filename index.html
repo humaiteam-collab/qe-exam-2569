@@ -937,7 +937,7 @@
     const PROGRESS_POINTER = "qe-exam-progress-current";
     const DEFAULT_DURATIONS = [150, 120, 110];
     // Paste the deployed Google Apps Script web app URL here. Leave as PASTE_WEB_APP_URL to preview only.
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyjG6S0R3BBd-IETu_UiUnNCQpGxt3Mag-io7C1SodJDbxIYXz8NurEsG82uyVgOh0/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHB6dGtNax8jONoOKKcmynELxzLn5MLfZZmMH78VT27fhjncOeF6WYimvilDBvZTc/exec";
 
     const HEADERS = [
       "ประทับเวลา (Timestamp)",
@@ -2727,6 +2727,8 @@
         fullName: name,
         subject: ($("gradeSubject") && $("gradeSubject").value) || "overall",
         subjectLabel: currentSubjectLabel(),
+        examDate: selectedSubmission ? formatSheetDate(selectedSubmission.examDate) : "",
+        startTime: selectedSubmission ? formatSheetTime(selectedSubmission.startTime) : "",
         scores: scores,
         comments: ($("gradeOverallComment") && $("gradeOverallComment").value) || "",
         oralPass: st.oral,
@@ -2802,7 +2804,7 @@
       const criteria = rubricConfig.criteria || [];
       const cats = rubricConfig.categories || [];
       const headers = [
-        "ประทับเวลา", "ชื่อผู้ให้คะแนน", "บทบาท", "รหัสนักศึกษา", "ชื่อ-นามสกุล", "วิชา", "ผลการประเมิน", "คะแนนรวม", "คะแนนเต็ม"
+        "ประทับเวลา", "ชื่อผู้ให้คะแนน", "บทบาท", "รหัสนักศึกษา", "ชื่อ-นามสกุล", "วันที่สอบ", "เวลาเริ่มสอบ", "วิชา", "ผลการประเมิน", "คะแนนรวม", "คะแนนเต็ม"
       ];
       cats.forEach(function (c) {
         headers.push("รวมหมวด: " + c.nameTh);
@@ -2825,7 +2827,7 @@
         const map = {};
         (g.categoryChecks || []).forEach(function (c) { map[c.id] = c; });
         const cols = [
-          g.savedAt, g.graderName, g.graderRole, g.studentId, g.fullName, g.subjectLabel || g.subject,
+          g.savedAt, g.graderName, g.graderRole, g.studentId, g.fullName, formatSheetDate(g.examDate), formatSheetTime(g.startTime), g.subjectLabel || g.subject,
           g.verdictLabel || g.verdict, g.total, g.totalMax
         ];
         cats.forEach(function (c) {
@@ -2902,6 +2904,42 @@
       box.appendChild(scroller);
     }
 
+    function formatSheetDate(value) {
+      if (value == null) return "";
+      const s = String(value).trim();
+      if (!s) return s;
+      const m = s.match(/^(\d{4}-\d{2}-\d{2})(?:[ T].*)?$/);
+      return m ? m[1] : s;
+    }
+
+    function formatSheetTime(value) {
+      if (value == null) return "";
+      const s = String(value).trim();
+      if (!s) return s;
+      const m = s.match(/(?:^|.*[ T])(\d{1,2}):(\d{2})(?::\d{2}(?:\.\d+)?)?\s*$/);
+      if (!m) return s;
+      return String(Number(m[1])).padStart(2, "0") + ":" + m[2];
+    }
+
+    function normalizeSubmission(sub) {
+      if (!sub || typeof sub !== "object") return sub;
+      const out = Object.assign({}, sub);
+      if (out.examDate != null && String(out.examDate).trim() !== "") out.examDate = formatSheetDate(out.examDate);
+      if (out.startTime != null && String(out.startTime).trim() !== "") out.startTime = formatSheetTime(out.startTime);
+      return out;
+    }
+
+    function submissionMeta(sub) {
+      if (!sub) return "";
+      const parts = [];
+      const who = [sub.fullName, sub.studentId].filter(Boolean).join(" · ");
+      if (who) parts.push(who);
+      if (sub.examDate) parts.push("วันที่สอบ " + sub.examDate);
+      if (sub.startTime) parts.push("เวลาเริ่ม " + sub.startTime);
+      if (sub.submitTime) parts.push("ส่งเมื่อ " + sub.submitTime);
+      return parts.join(" · ");
+    }
+
     function renderAnswerPane() {
       const box = $("answerPane");
       if (!box) return;
@@ -2926,7 +2964,7 @@
         const title = (config.questions[q.n - 1] && (state.lang === "en" ? config.questions[q.n - 1].titleEn : config.questions[q.n - 1].titleTh)) || ("วิชาที่ " + q.n);
         blocks.push("<article class='answer-block'><h3>วิชาที่ " + q.n + " — " + escapeHtml(title) + "</h3><pre class='answer-read'>" + escapeHtml(q.text || "—") + "</pre></article>");
       });
-      box.innerHTML = "<p class='note'>" + escapeHtml((sub.fullName || "") + " · " + (sub.studentId || "") + (sub.submitTime ? " · ส่งเมื่อ " + sub.submitTime : "")) + "</p>" + blocks.join("");
+      box.innerHTML = "<p class='note'>" + escapeHtml(submissionMeta(sub)) + "</p>" + blocks.join("");
     }
 
     function renderSubmissionPick() {
@@ -2941,7 +2979,7 @@
       centralSubmissions.forEach(function (s, i) {
         const opt = document.createElement("option");
         opt.value = String(i);
-        opt.textContent = (s.fullName || "") + " · " + (s.studentId || "") + (s.submitTime ? " · " + s.submitTime : "");
+        opt.textContent = submissionMeta(s);
         sel.appendChild(opt);
       });
       if (cur) sel.value = cur;
@@ -3127,6 +3165,8 @@
         '<table class="print-meta"><tr>' +
         "<td>นิสิต: <strong>" + escapeHtml(rec.fullName || "") + "</strong></td>" +
         "<td>รหัส: <strong>" + escapeHtml(rec.studentId || "") + "</strong></td></tr>" +
+        "<tr><td>วันที่สอบ: " + escapeHtml(formatSheetDate(rec.examDate) || "—") + "</td>" +
+        "<td>เวลาเริ่ม: " + escapeHtml(formatSheetTime(rec.startTime) || "—") + "</td></tr>" +
         "<tr><td>วิชา: " + escapeHtml(rec.subjectLabel || rec.subject || "") + "</td>" +
         "<td>วันที่ให้คะแนน: " + escapeHtml(rec.savedAt || fmtNow()) + "</td></tr>" +
         "<tr><td>ผู้ให้คะแนน: " + escapeHtml(rec.graderName || "") + "</td>" +
@@ -3210,7 +3250,7 @@
         const data = await postApps({ action: "list", adminKey: key });
         if (data && data.ok && Array.isArray(data.submissions)) {
           centralMode = true;
-          centralSubmissions = data.submissions;
+          centralSubmissions = data.submissions.map(normalizeSubmission);
           if (note) note.textContent = "เชื่อมต่อได้แล้ว พบคำตอบ " + data.submissions.length + " รายการ จะดึงคำตอบมาไว้ข้างรูบริก และบันทึกคะแนนลงแท็บคะแนนเมื่อกดบันทึก";
           if (mode) mode.textContent = "โหมดส่วนกลางพร้อมใช้ (Apps Script รุ่นที่ 2) — คะแนนจะถูกบันทึกทั้งในเครื่องนี้และลงชีต";
           renderSubmissionPick();
@@ -3267,6 +3307,9 @@
       defaultRubric: defaultRubric,
       compute: computeGradeState,
       decideVerdict: decideVerdict,
+      formatSheetDate: formatSheetDate,
+      formatSheetTime: formatSheetTime,
+      normalizeSubmission: normalizeSubmission,
       gradesToCsv: gradesToCsv,
       getRecords: function () { return gradeRecords.slice(); },
       getConfig: function () { return rubricConfig; },
