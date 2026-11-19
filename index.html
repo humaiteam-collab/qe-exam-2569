@@ -637,6 +637,72 @@
       .print-stage { width: auto; }
     }
 
+    .q-prompt { white-space: pre-wrap; }
+    .guide-card h2 { margin: 0 0 6px; }
+    .guide-body {
+      white-space: pre-wrap;
+      line-height: 1.75;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px 16px;
+      max-height: 420px;
+      overflow: auto;
+    }
+    .guide-ack {
+      display: flex; gap: 10px; align-items: flex-start;
+      margin: 12px 0 0; font-weight: 500;
+    }
+    .guide-ack input { width: 20px; height: 20px; margin-top: 3px; flex: none; }
+    .scope-box {
+      text-align: left;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      font-size: 0.94rem;
+      white-space: pre-wrap;
+      color: var(--ink);
+    }
+    .scope-box strong { color: var(--primary); }
+    .attach-box {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px dashed var(--line-strong);
+      background: var(--bg);
+    }
+    .attach-box h4 { margin: 0 0 4px; font-size: 1rem; }
+    .attach-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+    .attach-list li {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between;
+      padding: 8px 10px; border-radius: 8px; background: var(--paper); border: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+    .attach-list .meta { color: var(--muted); font-size: 0.82rem; }
+    .btn.small { padding: 6px 12px; font-size: 0.86rem; min-height: 0; }
+    .bank-option {
+      display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px;
+      padding: 10px 12px; margin: 0 0 8px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--paper); cursor: pointer;
+    }
+    .bank-option.selected { border-color: var(--primary); box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 20%, transparent); }
+    .bank-option input { margin-top: 5px; }
+    .bank-option .bank-text { white-space: pre-wrap; font-size: 0.93rem; line-height: 1.6; }
+    .bank-option .bank-label { font-weight: 600; display: block; margin-bottom: 2px; }
+    .q-in-pane {
+      white-space: pre-wrap; font-size: 0.9rem; color: var(--muted);
+      background: var(--bg); border-left: 3px solid var(--accent);
+      padding: 8px 12px; border-radius: 6px; margin: 0 0 8px;
+    }
+    .file-viewer {
+      margin-top: 10px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff;
+    }
+    .file-viewer iframe, .file-viewer img { width: 100%; min-height: 70vh; border: 0; display: block; object-fit: contain; }
+    .file-viewer img { min-height: 0; max-height: 80vh; }
+    .sheet-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
+    .tag-manual { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-ink); font-size: 0.78rem; font-weight: 600; }
     .hidden { display: none !important; }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
@@ -666,6 +732,10 @@
 
     <section class="card" id="infoCard">
       <h2 id="infoHeading">ข้อมูลผู้เข้าสอบ</h2>
+      <label class="field" id="rosterField" style="margin-bottom:12px">
+        <span id="lblRoster">เลือกชื่อของท่านจากรายชื่อผู้เข้าสอบ</span>
+        <select id="rosterPick"></select>
+      </label>
       <div class="grid-fields">
         <label class="field">
           <span id="lblSid">รหัสนักศึกษา (10 หลัก)</span>
@@ -687,8 +757,7 @@
         <label class="field">
           <span id="lblLevel">ระดับ</span>
           <select id="level">
-            <option value="ป.โท">ป.โท</option>
-            <option value="ป.เอก">ป.เอก</option>
+            <option value="ป.เอก" selected>ป.เอก</option>
           </select>
         </label>
         <label class="field">
@@ -701,10 +770,21 @@
         </label>
       </div>
       <div class="entry-actions" id="entryActions">
+        <label class="guide-ack" id="guideAckWrap">
+          <input type="checkbox" id="guideAck" />
+          <span id="guideAckLabel">ข้าพเจ้าได้อ่านแนวทางการสอบและเกณฑ์การประเมินแล้ว</span>
+        </label>
         <button type="button" class="btn primary" id="enterExamBtn">เข้าสู่ห้องสอบ</button>
         <p class="err" id="entryErr"></p>
       </div>
       <div class="candidate-bar hidden" id="candidateBar"></div>
+    </section>
+
+    <section class="card guide-card" id="guideCard">
+      <details id="guideDetails" open>
+        <summary><h2 id="guideHeading" style="display:inline">แนวทางการสอบ QE (สรุป)</h2></summary>
+        <div class="guide-body" id="guideBody" style="margin-top:10px"></div>
+      </details>
     </section>
 
     <div class="banner restore-banner" id="restoreBanner" role="status"></div>
@@ -720,6 +800,7 @@
       <p class="subject-info" id="subjectInfo"></p>
       <h3 class="q-prompt" id="qText"></h3>
       <div class="start-gate" id="startGate">
+        <div class="scope-box hidden" id="scopeBox"></div>
         <p id="startGateBody"></p>
         <button type="button" class="btn primary" id="startSubjectBtn">เริ่มสอบ</button>
       </div>
@@ -728,6 +809,15 @@
         <div class="q-meta">
           <span id="countMeta"></span>
           <span id="pasteMeta"></span>
+        </div>
+        <div class="attach-box" id="attachBox">
+          <h4 id="attachHeading">แนบไฟล์คำตอบ (ถ้ามี)</h4>
+          <p class="note" id="attachNote" style="margin:0">กรณีเขียนด้วยมือ ให้ถ่ายรูปหรือสแกนแล้วแนบที่นี่ รองรับ PDF, รูปภาพ, Word ไม่เกิน 10 MB ต่อไฟล์</p>
+          <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <input type="file" id="attachInput" accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,image/*,application/pdf" multiple />
+          </div>
+          <p class="note" id="attachStatus" style="margin:6px 0 0"></p>
+          <ul class="attach-list" id="attachList"></ul>
         </div>
       </div>
     </section>
@@ -739,7 +829,7 @@
       <h2 id="headerHeading">หัวคอลัมน์ชีต QE-2569 ที่จะถูกเขียน</h2>
       <div class="table-scroll" id="headerRow"></div>
       <p class="note" id="writeNote">ปุ่มส่งจะแสดงแถวที่จะเขียนเท่านั้น ไม่ได้ส่งไปยัง Google Sheet จริง จนกว่าจะใส่ URL ของ Apps Script</p>
-      <p class="note">เลื่อนตารางไปทางขวาเพื่อดูหัวคอลัมน์ครบทั้ง 20 ช่อง</p>
+      <p class="note">เลื่อนตารางไปทางขวาเพื่อดูหัวคอลัมน์ครบทุกช่อง</p>
       <div style="margin-top:16px" id="submitWrap">
         <button type="button" class="btn primary" id="submitBtn">ส่งคำตอบ</button>
       </div>
@@ -756,9 +846,8 @@
     <header class="topbar">
       <div class="logo-slot logo-mcu" id="adminLogoMcu"></div>
       <div class="titles">
-        <div class="demo-flag">Demo only — not a real login</div>
-        <h1 id="adminTitle">โหมดแอดมิน (ตัวอย่างเท่านั้น)</h1>
-        <p>ตั้งค่าโลโก้ ธีมสี และข้อความทุกหน้า ทั้งไทยและอังกฤษ บันทึกในเครื่องนี้เท่านั้น</p>
+        <h1 id="adminTitle">โหมดแอดมิน</h1>
+        <p>เลือกโจทย์ ตั้งเวลา แนวทางการสอบ โลโก้ ธีมสี และข้อความ แล้วเผยแพร่ให้นิสิตทุกเครื่อง</p>
       </div>
       <div class="status">
         <button type="button" class="btn" id="btnBackStudent">ดูหน้าสอบ</button>
@@ -766,7 +855,6 @@
       <div class="logo-slot logo-prog" id="adminLogoProg"></div>
     </header>
     <div id="adminGate" class="card admin-gate">
-      <span class="demo-flag">ตัวอย่างเท่านั้น</span>
       <h2>เข้าสู่ระบบแอดมิน</h2>
       <p class="note">กรุณากรอกรหัสผ่านเพื่อเข้าสู่ระบบแอดมิน</p>
       <label class="field" style="max-width:320px;margin-top:12px">
@@ -805,12 +893,46 @@
         <div id="textFields"></div>
       </section>
       <section class="card admin-section">
-        <h2>วิชาสอบ (ชื่อ โจทย์ ข้อมูล เวลา)</h2>
+        <h2>แนวทางการสอบ (สรุป) ที่นิสิตอ่านก่อนเข้าห้องสอบ</h2>
+        <p class="note">ค่าเริ่มต้นสรุปจากเอกสารแนวทางการสอบวัดคุณสมบัติ (QE) สาขาวิชาพุทธจิตวิทยา แก้ไขได้ทั้งไทยและอังกฤษ</p>
+        <div class="pair">
+          <label class="field"><span>ไทย</span><textarea id="guideTh" rows="14"></textarea></label>
+          <label class="field"><span>English</span><textarea id="guideEn" rows="14"></textarea></label>
+        </div>
+        <div style="margin-top:8px"><button type="button" class="btn" id="guideResetBtn">ใช้แนวทางตั้งต้นจากเอกสาร</button></div>
+      </section>
+      <section class="card admin-section">
+        <h2>รายชื่อผู้เข้าสอบ (ป.เอก)</h2>
+        <p class="note">บรรทัดละ 1 คน: รหัสนักศึกษา 10 หลัก แล้วเว้นวรรคหรือ Tab ตามด้วยชื่อ (วางจาก Excel ได้) นิสิตเลือกชื่อจากรายการนี้ในหน้าสอบ หากไม่มีชื่อ นิสิตกรอกเองได้</p>
+        <label class="field"><span>รายชื่อ</span><textarea id="rosterText" rows="10" spellcheck="false"></textarea></label>
+        <p class="note" id="rosterNote"></p>
+      </section>
+      <section class="card admin-section">
+        <h2>ผู้ตรวจ / กรรมการ (รหัส + ชื่อ)</h2>
+        <p class="note">บรรทัดละ 1 ท่าน: รหัสผู้ตรวจ (เช่น 6901) แล้วเว้นวรรคหรือ Tab ตามด้วยชื่อ รหัสใช้เข้าสู่ระบบให้คะแนน ระบบจะเก็บรหัสไว้ฝั่งเซิร์ฟเวอร์เท่านั้น (หน้าสอบเห็นเฉพาะชื่อ) — กด "เผยแพร่" เพื่อบันทึก</p>
+        <label class="field"><span>ผู้ตรวจ</span><textarea id="gradersText" rows="8" spellcheck="false"></textarea></label>
+        <p class="note" id="gradersNote"></p>
+      </section>
+      <section class="card admin-section">
+        <h2>วิชาสอบ: เลือกโจทย์จากคลังข้อสอบ (หมวดละ 1 ข้อ) และตั้งเวลา</h2>
+        <p class="note">แต่ละวิชาผูกกับหมวดในเอกสารข้อสอบ QE 2569 เลือกโจทย์ 1 ข้อแล้วข้อความโจทย์จะถูกใส่ให้อัตโนมัติ (ยังแก้ไขเพิ่มได้)</p>
         <div id="questionFields"></div>
       </section>
-      <section class="card">
-        <button type="button" class="btn primary" id="saveAdmin">บันทึกการตั้งค่า</button>
-        <button type="button" class="btn" id="resetAll">รีเซ็ตเป็นค่าเริ่มต้น</button>
+      <section class="card admin-section" id="publishSection">
+        <h2>บันทึกและเผยแพร่ให้นิสิตทุกเครื่อง</h2>
+        <p class="note">ปุ่ม "บันทึกในเครื่องนี้" เก็บไว้เฉพาะเบราว์เซอร์นี้ ส่วน "เผยแพร่" จะส่งการตั้งค่า (โจทย์ที่เลือก เวลา แนวทาง ข้อความ ธีม) ไปเก็บใน Google Sheet แท็บ "ตั้งค่า" นิสิตทุกเครื่องจะโหลดค่านี้เมื่อเปิดหน้าสอบ ต้องใช้รหัส ADMIN_KEY ของ Apps Script</p>
+        <div class="grid-fields">
+          <label class="field">
+            <span>รหัสผู้ดูแล (ADMIN_KEY)</span>
+            <input type="password" id="publishKey" autocomplete="off" />
+          </label>
+        </div>
+        <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:8px">
+          <button type="button" class="btn primary" id="publishBtn">เผยแพร่การตั้งค่าไปยังเซิร์ฟเวอร์</button>
+          <button type="button" class="btn" id="saveAdmin">บันทึกในเครื่องนี้</button>
+          <button type="button" class="btn" id="pullConfigBtn">โหลดค่าที่เผยแพร่อยู่</button>
+          <button type="button" class="btn" id="resetAll">รีเซ็ตเป็นค่าเริ่มต้น</button>
+        </div>
         <p class="note" id="adminSaveNote"></p>
       </section>
       </div>
@@ -821,12 +943,14 @@
           <p class="note" id="gradeModeNote">ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script</p>
           <div class="grid-fields">
             <label class="field">
-              <span>รหัสผู้ดูแล (ADMIN_KEY) สำหรับโหมดส่วนกลาง — ไม่บังคับ</span>
+              <span>รหัสผู้ตรวจ (เช่น 6901) หรือ ADMIN_KEY สำหรับโหมดส่วนกลาง</span>
               <input type="password" id="gradeAdminKey" autocomplete="off" />
             </label>
           </div>
           <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px">
             <button type="button" class="btn" id="gradeConnectBtn">เชื่อมต่อเพื่อดึงคำตอบ / บันทึกส่วนกลาง</button>
+            <button type="button" class="btn" id="gradeRefreshBtn">ดึงคำตอบล่าสุดจากชีต</button>
+            <a class="btn sheet-link" id="openSheetLink" target="_blank" rel="noopener">เปิด Google Sheet (QE-2569) ↗</a>
           </div>
           <p class="note" id="gradeConnectNote"></p>
         </section>
@@ -834,7 +958,7 @@
         <section class="card admin-section">
           <h2>ผู้ให้คะแนน</h2>
           <div class="grid-fields">
-            <label class="field"><span>ชื่อผู้ให้คะแนน</span><input id="graderName" autocomplete="name" /></label>
+            <label class="field"><span>ชื่อผู้ให้คะแนน</span><input id="graderName" list="graderNameList" autocomplete="off" /></label>
             <label class="field"><span>บทบาท</span>
               <input id="graderRole" list="graderRoles" placeholder="กรรมการสอบ / ประธานกรรมการ" />
               <datalist id="graderRoles">
@@ -915,6 +1039,27 @@
           </div>
         </div>
 
+        <section class="card admin-section" id="manualSection">
+          <h2>นำเข้าคำตอบแบบเขียนด้วยมือ / อัปโหลดไฟล์แทนนิสิต</h2>
+          <p class="note">สำหรับนิสิตที่เขียนตอบในกระดาษ ให้สแกนหรือถ่ายรูปแล้วอัปโหลดตามวิชา ระบบจะเพิ่มแถวในชีต (รูปแบบการส่ง = เขียนด้วยมือ) และเก็บไฟล์ใน Google Drive ใช้กับนิสิตที่ส่งออนไลน์แล้วได้ด้วย (เพิ่มไฟล์อย่างเดียว ไม่ต้องติ๊กสร้างแถว) ต้องเชื่อมต่อด้วย ADMIN_KEY ก่อน</p>
+          <label class="field" style="margin-bottom:10px"><span>เลือกนิสิตจากรายชื่อ</span><select id="manRosterPick"></select></label>
+          <div class="grid-fields">
+            <label class="field"><span>รหัสนักศึกษา (10 หลัก)</span><input id="manSid" inputmode="numeric" maxlength="10" autocomplete="off" /></label>
+            <label class="field"><span>ชื่อ-นามสกุล</span><input id="manName" /></label>
+            <label class="field"><span>รุ่น</span><input id="manCohort" list="cohorts" placeholder="รุ่น 14" /></label>
+            <label class="field"><span>ระดับ</span>
+              <select id="manLevel"><option value="ป.เอก">ป.เอก</option></select>
+            </label>
+            <label class="field"><span>วันที่สอบ</span><input type="date" id="manDate" /></label>
+          </div>
+          <label class="guide-ack"><input type="checkbox" id="manCreateRow" checked /> <span>สร้างแถวคำตอบใหม่ในชีต (นิสิตส่งกระดาษ ไม่ได้ส่งออนไลน์)</span></label>
+          <div id="manSubjects" style="margin-top:12px"></div>
+          <div class="grade-actions">
+            <button type="button" class="btn primary" id="manSubmitBtn">บันทึกเข้าระบบ</button>
+          </div>
+          <p class="note" id="manNote"></p>
+        </section>
+
         <section class="card admin-section">
           <h2>รายชื่อที่ให้คะแนนแล้ว</h2>
           <div id="gradeList"></div>
@@ -950,15 +1095,16 @@
     </header>
     <div id="gradeGate" class="card grade-gate">
       <h2>เข้าสู่ระบบกรรมการให้คะแนน</h2>
-      <p class="note">เฉพาะกรรมการผู้ให้คะแนน กรอกรหัส ADMIN_KEY และชื่อผู้ให้คะแนน ระบบจะตรวจสอบรหัสกับเซิร์ฟเวอร์ก่อนเปิดหน้าต่างให้คะแนน</p>
+      <p class="note">เลือกชื่อผู้ตรวจ แล้วกรอกรหัสผู้ตรวจของท่าน (เช่น 6901) ระบบจะตรวจสอบรหัสกับเซิร์ฟเวอร์ก่อนเปิดหน้าต่างให้คะแนน ผู้ดูแลระบบใช้ ADMIN_KEY ได้</p>
       <div class="grid-fields">
         <label class="field">
-          <span>รหัสผู้ดูแล (ADMIN_KEY)</span>
-          <input type="password" id="committeeKey" autocomplete="off" />
+          <span>ชื่อผู้ตรวจ</span>
+          <input id="committeeName" list="graderNameList" autocomplete="off" placeholder="เลือกหรือพิมพ์ชื่อ" />
+          <datalist id="graderNameList"></datalist>
         </label>
         <label class="field">
-          <span>ชื่อผู้ให้คะแนน</span>
-          <input id="committeeName" autocomplete="name" />
+          <span>รหัสผู้ตรวจ (เช่น 6901)</span>
+          <input type="password" id="committeeKey" autocomplete="off" />
         </label>
       </div>
       <p class="err" id="committeeKeyErr"></p>
@@ -999,6 +1145,173 @@
     // Paste the deployed Google Apps Script web app URL here. Leave as PASTE_WEB_APP_URL to preview only.
     const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHB6dGtNax8jONoOKKcmynELxzLn5MLfZZmMH78VT27fhjncOeF6WYimvilDBvZTc/exec";
 
+    const SHEET_URL = "https://docs.google.com/spreadsheets/d/1hAefq4bojIkXTfHFaUu4E454KKGKEnj0yXf1ArxsW5U/edit";
+    const MAX_UPLOAD_MB = 10;
+    const CONFIG_CACHE_KEY = "qe-exam-published-config-v1";
+
+    // หมวดเนื้อหา (แนวทาง QE ข้อ 2) และคลังโจทย์ (ข้อสอบ QE 2569)
+    const CATEGORIES = {
+      1: {
+        titleTh: "หมวดที่ 1 แนวคิดและทฤษฎีทางจิตวิทยา",
+        titleEn: "Category 1: Psychological Concepts and Theories",
+        points: 20,
+        scopeTh: "ขอบเขต: ทฤษฎีพัฒนาการและบุคลิกภาพ · การเรียนรู้และการปรับพฤติกรรม · จิตวิทยาเชิงบวกและสุขภาวะ · มนุษยนิยมและการปรึกษา · CBT · Mindfulness-based Approaches · การวิเคราะห์ เปรียบเทียบ วิพากษ์ทฤษฎี\nสมรรถนะที่มุ่งประเมิน: ความรู้เชิงลึก วิเคราะห์ วิพากษ์ และเลือกใช้ทฤษฎีให้เหมาะสมกับปัญหาและบริบทของมนุษย์",
+        scopeEn: "Scope: developmental and personality theories · learning and behaviour modification · positive psychology and well-being · humanistic psychology and counselling · CBT · mindfulness-based approaches · comparing and critiquing theories\nCompetency assessed: in-depth knowledge; analysing, critiquing and choosing theories that fit human problems and contexts"
+      },
+      2: {
+        titleTh: "หมวดที่ 2 พุทธจิตวิทยาประยุกต์",
+        titleEn: "Category 2: Applied Buddhist Psychology",
+        points: 30,
+        scopeTh: "ขอบเขต: หลักพุทธธรรม (ขันธ์ 5 อายตนะ 6 ไตรลักษณ์ ปฏิจจสมุปบาท อริยสัจ 4 มรรค 8 ไตรสิกขา โยนิโสมนสิการ สติสัมปชัญญะ พรหมวิหาร 4 สังคหวัตถุ 4 ภาวนา 4) · กระบวนการพุทธจิตวิทยา · การพัฒนาตน · การปรึกษาตามแนวพุทธ · การบูรณาการกับทฤษฎีจิตวิทยา · นวัตกรรมพัฒนามนุษย์\nสมรรถนะที่มุ่งประเมิน: เชื่อมโยงและบูรณาการพุทธธรรมกับทฤษฎีจิตวิทยา วิเคราะห์ปัญหา ออกแบบการประยุกต์ และเสนอรูปแบบการพัฒนามนุษย์",
+        scopeEn: "Scope: core Buddhist teachings (five aggregates, six sense bases, three characteristics, dependent origination, Four Noble Truths, Eightfold Path, threefold training, yoniso manasikāra, mindfulness, four brahmavihāras, four saṅgahavatthu, four bhāvanā) · Buddhist-psychology processes · self-development · Buddhist counselling · integration with psychological theory · innovations for human development\nCompetency assessed: integrating Dhamma with psychological theory, analysing problems, designing applications and proposing development models"
+      },
+      3: {
+        titleTh: "หมวดที่ 3 วิธีวิทยาการวิจัยและการสร้างองค์ความรู้",
+        titleEn: "Category 3: Research Methodology and Knowledge Creation",
+        points: 20,
+        scopeTh: "ขอบเขต: ปัญหา คำถาม วัตถุประสงค์การวิจัย · ทบทวนวรรณกรรมและ Research Gap · วิจัยเชิงปริมาณ คุณภาพ ผสานวิธี ทดลอง/กึ่งทดลอง · เครื่องมือและคุณภาพเครื่องมือ · สถิติเชิงพรรณนาและอนุมาน · การวิเคราะห์เชิงคุณภาพและสามเส้า · จริยธรรมการวิจัย · การสร้างโมเดล/นวัตกรรมและองค์ความรู้ใหม่\nสมรรถนะที่มุ่งประเมิน: เลือกและออกแบบระเบียบวิธีวิจัย วิเคราะห์และประเมินงานวิจัย สังเคราะห์และเสนอแนวทางวิจัยระดับดุษฎีบัณฑิต",
+        scopeEn: "Scope: research problems, questions and objectives · literature review and research gaps · quantitative, qualitative, mixed-methods, experimental and quasi-experimental designs · instruments and their quality · descriptive and inferential statistics · qualitative analysis and triangulation · research ethics · building models, innovations and new knowledge\nCompetency assessed: choosing and designing methods, evaluating research, synthesising knowledge and proposing doctoral-level research"
+      }
+    };
+
+    const QUESTION_BANK = [
+      { id: "1.1", cat: 1, no: 1,
+        th: "ให้นิสิตเลือกทฤษฎีทางจิตวิทยา 1 ทฤษฎี อธิบายแนวคิดและหลักการสำคัญ วิเคราะห์จุดเด่นและข้อจำกัด วิพากษ์ความเหมาะสมในการอธิบายและแก้ไขปัญหามนุษย์ในสังคมปัจจุบัน พร้อมเสนอแนวทางการประยุกต์หรือต่อยอดทฤษฎี",
+        en: "Choose one psychological theory. Explain its key concepts and principles, analyse its strengths and limitations, critique how well it explains and addresses human problems in today's society, and propose ways to apply or extend the theory." },
+      { id: "1.2", cat: 1, no: 2,
+        th: "ให้นิสิตวิเคราะห์และเปรียบเทียบสำนักคิดทางจิตวิทยาที่สำคัญในด้านธรรมชาติมนุษย์ สาเหตุของพฤติกรรม และการพัฒนามนุษย์ จากนั้นเลือก 1–2 สำนักคิด และหลักพุทธธรรม 2–3 หลักธรรม มาบูรณาการ โดยวิเคราะห์ความสอดคล้อง ความแตกต่าง จุดเด่น และข้อจำกัด พร้อมเสนอกรอบแนวคิดการพัฒนาศักยภาพมนุษย์ตามแนวพุทธจิตวิทยาที่ประยุกต์ใช้ได้จริง",
+        en: "Analyse and compare the major schools of psychology on human nature, the causes of behaviour, and human development. Then integrate 1–2 schools with 2–3 Buddhist teachings, analysing their congruence, differences, strengths and limitations, and propose a practical Buddhist-psychology framework for developing human potential." },
+      { id: "2.1", cat: 2, no: 1,
+        th: "ให้นิสิตวิเคราะห์แนวคิด หลักการ และกระบวนการพัฒนาตนตามแนวพุทธจิตวิทยา โดยเลือกหลักพุทธธรรม 2–3 หลักธรรม และออกแบบการฝึกปฏิบัติเพื่อพัฒนาศักยภาพมนุษย์ในยุคปัจจุบัน พร้อมระบุเป้าหมาย วิธีการ และผลลัพธ์ที่คาดหวัง",
+        en: "Analyse the concepts, principles and process of self-development in Buddhist psychology. Select 2–3 Buddhist teachings and design a practice programme for developing human potential today, stating its goals, methods and expected outcomes." },
+      { id: "2.2", cat: 2, no: 2,
+        th: "ให้นิสิตวิเคราะห์แนวคิดและจุดมุ่งหมายของจิตวิทยาการปรึกษาตามแนวพุทธจิตวิทยา พร้อมเสนอหลักพุทธธรรม ทฤษฎีทางจิตวิทยา ทักษะและเทคนิคการปรึกษา ตลอดจนคุณลักษณะ สมรรถนะ และจรรยาบรรณของผู้ให้การปรึกษา",
+        en: "Analyse the concepts and aims of counselling psychology from a Buddhist-psychology perspective, and propose the Buddhist teachings, psychological theories, counselling skills and techniques, and the attributes, competencies and code of ethics of the counsellor." },
+      { id: "2.3", cat: 2, no: 3,
+        th: "จากกรณีบุคคลวัยทำงานที่เครียดจากงานและครอบครัว วิตกกังวลเกี่ยวกับอนาคต เปรียบเทียบตนเองผ่านสื่อสังคมออนไลน์ รู้สึกไร้คุณค่า และแยกตัวจากสังคม ให้นิสิตวิเคราะห์ปัญหาและออกแบบกระบวนการปรึกษาตามแนวพุทธจิตวิทยา โดยบูรณาการทฤษฎีทางจิตวิทยากับหลักพุทธธรรม ครอบคลุมทักษะ เทคนิค ขั้นตอนการช่วยเหลือ การประเมินและติดตามผล รวมถึงจริยธรรมในการปรึกษา",
+        en: "Case: a working adult is stressed by work and family, anxious about the future, compares themselves with others on social media, feels worthless and withdraws socially. Analyse the problem and design a Buddhist-psychology counselling process that integrates psychological theory with Buddhist teachings, covering skills, techniques, helping steps, assessment and follow-up, and counselling ethics." },
+      { id: "3.1", cat: 3, no: 1,
+        th: "ให้นิสิตวิเคราะห์และเปรียบเทียบวิธีวิทยาการวิจัย 6 รูปแบบ ได้แก่ การวิจัยเชิงปริมาณ เชิงคุณภาพ แบบผสานวิธี การใช้สถิติขั้นสูง การวิจัยเชิงอนาคต และการวิจัยกึ่งทดลอง โดยพิจารณาหลักการ กระบวนการ เครื่องมือ การเก็บรวบรวมและวิเคราะห์ข้อมูล จุดเด่น ข้อจำกัด และความเหมาะสมในการสร้างองค์ความรู้ใหม่ทางพุทธจิตวิทยา",
+        en: "Analyse and compare six research approaches: quantitative, qualitative, mixed methods, advanced statistics, futures research and quasi-experimental research. Consider their principles, processes, instruments, data collection and analysis, strengths, limitations and suitability for creating new knowledge in Buddhist psychology." },
+      { id: "3.2", cat: 3, no: 2,
+        th: "ให้นิสิตกำหนดหัวข้อดุษฎีนิพนธ์ 1 เรื่อง เกี่ยวกับปัญหาหรือความท้าทายของมนุษย์ในสังคมปัจจุบัน โดยใช้หลักพุทธจิตวิทยาเป็นพื้นฐาน พร้อมจัดทำโครงร่างการวิจัยให้ครอบคลุมประเด็นต่อไปนี้\n1. ชื่อเรื่อง ความเป็นมาและความสำคัญของปัญหา\n2. คำถามและวัตถุประสงค์การวิจัย\n3. ขอบเขต แนวคิด ทฤษฎี และหลักพุทธธรรม\n4. รูปแบบและขั้นตอนการวิจัย\n5. ประชากร กลุ่มตัวอย่าง หรือผู้ให้ข้อมูลสำคัญ\n6. เครื่องมือวิจัยและการตรวจสอบคุณภาพ\n7. การเก็บรวบรวม วิเคราะห์ และสังเคราะห์ข้อมูล\n8. นิยามศัพท์เฉพาะและกรอบแนวคิดการวิจัย\n9. องค์ความรู้ใหม่และประโยชน์ที่คาดว่าจะได้รับ",
+        en: "Propose one dissertation topic on a human problem or challenge in today's society, grounded in Buddhist psychology, and prepare a research outline covering:\n1. Title, background and significance of the problem\n2. Research questions and objectives\n3. Scope, concepts, theories and Buddhist teachings\n4. Research design and procedures\n5. Population, sample or key informants\n6. Research instruments and their quality checks\n7. Data collection, analysis and synthesis\n8. Operational definitions and conceptual framework\n9. Expected new knowledge and benefits" },
+      { id: "3.3", cat: 3, no: 3,
+        th: "ให้นิสิตวิเคราะห์และสังเคราะห์ประเด็นต่อไปนี้\n1. เปรียบเทียบความเหมือนและความแตกต่างระหว่างการวิจัยเชิงปริมาณกับเชิงคุณภาพอย่างน้อย 10 ประเด็น\n2. อธิบายหลักการและเทคนิคการเขียนดุษฎีนิพนธ์บทที่ 1–5 พร้อมแสดงความเชื่อมโยงของเนื้อหาแต่ละบท\n3. อธิบายความหมายและกระบวนการสร้างองค์ความรู้ วิเคราะห์คุณลักษณะขององค์ความรู้ที่ดีอย่างน้อย 4 ประการ และเสนอแนวทางสร้างองค์ความรู้ใหม่ทางพุทธจิตวิทยาที่นำไปใช้ประโยชน์ได้จริง",
+        en: "Analyse and synthesise the following:\n1. Compare quantitative and qualitative research on at least 10 points of similarity and difference.\n2. Explain the principles and techniques for writing dissertation chapters 1–5 and show how the chapters connect.\n3. Explain the meaning and process of knowledge creation, analyse at least four qualities of good knowledge, and propose practical ways to create new knowledge in Buddhist psychology." }
+    ];
+
+    // รายชื่อผู้เข้าสอบ ป.เอก (แอดมินแก้ไขและเผยแพร่ได้)
+    const DEFAULT_ROSTER = [
+      { sid: "6801103002", name: "Bounmy Douangmala" },
+      { sid: "6801103003", name: "Hoang Van Nhan" },
+      { sid: "6801103004", name: "Sengphet Xaysomphou" },
+      { sid: "6801103005", name: "Synganh Boudsadee" },
+      { sid: "6801103041", name: "นางกิ่งประกา เบญญาธนศรีศักดิ์" },
+      { sid: "6801103042", name: "นางสาวจุฑารัตน์ ทรัพย์ปฐวี" },
+      { sid: "6801103043", name: "นางนิทรา กิติยากร ณ อยุธยา (ต่าย)" },
+      { sid: "6801103044", name: "นางสาววรณธร หงส์จรรยา" },
+      { sid: "6801103045", name: "นางสตารัตน์ อธิบุญสุวิสิฐ (นก)" },
+      { sid: "6801103046", name: "Bounleth Thongasa" },
+      { sid: "6801103047", name: "Jittakorn Inseachiangmai" },
+      { sid: "6801103048", name: "Souphaphak Chittaboubpha" },
+      { sid: "6801103049", name: "Sophoan Khy" },
+      { sid: "6801103050", name: "นายแพทย์อภิชัย สิรกุลจิรา" }
+    ];
+
+    // ผู้ตรวจตั้งต้น (ชื่อที่ยืนยันได้จากเว็บไซต์คณะมนุษยศาสตร์ มจร — แอดมินเพิ่ม/แก้ได้)
+    const DEFAULT_GRADERS = [
+      { code: "6901", name: "พระมหาสุเทพ สุทฺธิญาโณ, ผศ.ดร." },
+      { code: "6902", name: "พระใบฎีกากิตติพงษ์ สีลสุทฺโธ, ผศ.ดร." },
+      { code: "6903", name: "พระครูสังฆรักษ์ เอกภัทร อภิฉนฺโท, ผศ.ดร." },
+      { code: "6904", name: "รศ.ดร.สุรพงษ์ คงสัตย์" }
+    ];
+
+    function parseRosterText(text) {
+      const out = [];
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        const m = line.trim().match(/^(\d{10})[\s,;]+(.+)$/);
+        if (m && !out.some(function (r) { return r.sid === m[1]; })) out.push({ sid: m[1], name: m[2].trim() });
+      });
+      return out;
+    }
+
+    function parseGradersText(text) {
+      const out = [];
+      String(text || "").split(/\r?\n/).forEach(function (line) {
+        const m = line.trim().match(/^([0-9A-Za-z_-]{3,})[\s,;]+(.+)$/);
+        if (m && !out.some(function (g) { return g.code === m[1]; })) out.push({ code: m[1], name: m[2].trim() });
+      });
+      return out;
+    }
+
+    function normalizeRoster(list) {
+      if (!Array.isArray(list)) return DEFAULT_ROSTER.slice();
+      return list.filter(function (r) { return r && /^\d{10}$/.test(String(r.sid)) && r.name; })
+        .map(function (r) { return { sid: String(r.sid), name: String(r.name) }; });
+    }
+
+    function bankById(id) {
+      return QUESTION_BANK.find(function (b) { return b.id === id; }) || null;
+    }
+
+    function bankForCat(cat) {
+      return QUESTION_BANK.filter(function (b) { return b.cat === Number(cat); });
+    }
+
+    function defaultGuide() {
+      return {
+        th: [
+          "การสอบ QE ระดับปริญญาเอก สาขาวิชาพุทธจิตวิทยา ไม่ได้วัดการท่องจำ แต่ประเมินความพร้อมเป็นนักวิจัยและนักวิชาการระดับดุษฎีบัณฑิต ใน 3 ระดับ: (1) ความรู้และความเข้าใจ (2) การวิเคราะห์และสังเคราะห์ (3) ศักยภาพในการสร้างองค์ความรู้ใหม่ — ครั้งนี้เน้นข้อ 3 เป็นผลลัพธ์สูงสุด",
+          "",
+          "โครงสร้างข้อเขียน (3 หมวด หมวดละ 1 ข้อ)",
+          "• หมวดที่ 1 แนวคิดและทฤษฎีทางจิตวิทยา (20%)",
+          "• หมวดที่ 2 พุทธจิตวิทยาประยุกต์ (30%)",
+          "• หมวดที่ 3 วิธีวิทยาการวิจัยและการสร้างองค์ความรู้ (20%)",
+          "",
+          "สิ่งที่กรรมการให้น้ำหนักในคำตอบ",
+          "1. คิดวิเคราะห์และวิพากษ์อย่างมีเหตุผลและอ้างหลักฐานทางวิชาการ",
+          "2. บูรณาการทฤษฎีจิตวิทยากับหลักพุทธธรรม ชี้ความสอดคล้อง ความแตกต่าง และข้อจำกัด (ไม่ใช่วางสองศาสตร์ไว้คู่กันเฉย ๆ)",
+          "3. ประยุกต์ใช้ความรู้วิเคราะห์ปัญหาและออกแบบแนวทางพัฒนามนุษย์",
+          "4. สังเคราะห์และเสนอกรอบแนวคิด รูปแบบ หรือนวัตกรรมที่ใหม่และมีคุณค่า",
+          "5. แสดงศักยภาพการวิจัยระดับดุษฎีบัณฑิตอย่างเป็นอิสระ",
+          "",
+          "เกณฑ์รูบริก (ข้อ 5.2): พุทธธรรมและพุทธจิตวิทยา 25% · ทฤษฎีจิตวิทยาและการบูรณาการ 15% · ระเบียบวิธีวิจัยและสถิติ 20% · การคิดวิเคราะห์และวิพากษ์ 15% · การสังเคราะห์และสร้างองค์ความรู้ใหม่ 15% · ความพร้อมในการวิจัยอิสระและจริยธรรม 10%",
+          "เกณฑ์ผ่าน (ข้อ 5.4): คะแนนรวมไม่น้อยกว่า 75 และแต่ละหมวดไม่น้อยกว่า 60% · 70–74 ผ่านโดยมีเงื่อนไข · ต่ำกว่า 70 ไม่ผ่าน",
+          "",
+          "ข้อปฏิบัติในห้องสอบ",
+          "• อ่านโจทย์ได้ก่อน เวลาจะเริ่มนับเมื่อกด \"เริ่มสอบ\" ของแต่ละวิชา และไม่หยุดแม้ปิดหน้าต่าง",
+          "• ระบบบันทึกอัตโนมัติ ห้ามวาง (paste) ข้อความ ทุกครั้งที่พยายามวางจะถูกบันทึก",
+          "• หากเขียนตอบด้วยมือ ให้ถ่ายรูปหรือสแกนแล้วแนบไฟล์ในวิชานั้น",
+          "• ต้องรักษาความซื่อสัตย์ทางวิชาการ อ้างอิงแนวคิดให้ถูกต้อง"
+        ].join("\n"),
+        en: [
+          "The doctoral QE in Buddhist Psychology does not test memorisation. It assesses readiness to work as a doctoral-level researcher and scholar at three levels: (1) knowledge and understanding, (2) critical analysis and synthesis, (3) research competency and knowledge creation — this round emphasises level 3.",
+          "",
+          "Written exam structure (3 categories, one question each)",
+          "• Category 1 Psychological Concepts and Theories (20%)",
+          "• Category 2 Applied Buddhist Psychology (30%)",
+          "• Category 3 Research Methodology and Knowledge Creation (20%)",
+          "",
+          "What the committee looks for",
+          "1. Reasoned critical analysis supported by academic evidence",
+          "2. Real integration of psychological theory and Buddhist teachings, showing congruence, differences and limitations",
+          "3. Applying knowledge to analyse problems and design human-development approaches",
+          "4. Synthesising new, valuable frameworks, models or innovations",
+          "5. Independent doctoral-level research potential",
+          "",
+          "Rubric (5.2): Buddhist doctrine & psychology 25% · psychological theory & integration 15% · research methods & statistics 20% · critical thinking 15% · synthesis & new knowledge 15% · research readiness & ethics 10%",
+          "Pass rule (5.4): total ≥ 75 and every category ≥ 60% · 70–74 conditional pass · below 70 fail",
+          "",
+          "Exam-room rules",
+          "• You may read each question first; its timer starts when you press Start and keeps running if you close the window.",
+          "• Answers autosave. Pasting is blocked and every attempt is logged.",
+          "• If you write by hand, photograph or scan your pages and attach them to that subject.",
+          "• Maintain academic integrity and cite ideas correctly."
+        ].join("\n")
+      };
+    }
+
     const HEADERS = [
       "ประทับเวลา (Timestamp)",
       "Full Name (ชื่อ-นามสกุล)",
@@ -1019,7 +1332,10 @@
       "Paste Attempts (ครั้งที่พยายามวาง)",
       "Session ID (รหัสเซสชัน)",
       "Device (อุปกรณ์)",
-      "Screen (ขนาดหน้าจอ)"
+      "Screen (ขนาดหน้าจอ)",
+      "Question Set (โจทย์ที่ใช้)",
+      "Attachments (ไฟล์แนบ)",
+      "Submission Mode (รูปแบบการส่ง)"
     ];
 
     const PRESETS = [
@@ -1089,7 +1405,19 @@
       ["confirmClearOk", "ปุ่มยืนยันล้างคำตอบ"],
       ["restoredNotice", "ข้อความกู้คืนคำตอบ"],
       ["autosavedAt", "สถานะบันทึกอัตโนมัติ (ใส่ {t})"],
-      ["timerReady", "ข้อความเวลายังไม่เริ่ม"]
+      ["timerReady", "ข้อความเวลายังไม่เริ่ม"],
+      ["guideHeading", "หัวข้อแนวทางการสอบ"],
+      ["guideAck", "ข้อความยืนยันว่าอ่านแนวทางแล้ว"],
+      ["guideNeedAck", "คำเตือนเมื่อยังไม่ติ๊กอ่านแนวทาง"],
+      ["scopeHeading", "หัวข้อขอบเขตหมวด (ก่อนเริ่มสอบ)"],
+      ["attachHeading", "หัวข้อแนบไฟล์"],
+      ["attachNote", "คำอธิบายแนบไฟล์ (ใส่ {mb})"],
+      ["attachUploading", "ข้อความกำลังอัปโหลด (ใส่ {name})"],
+      ["attachDone", "ข้อความอัปโหลดสำเร็จ (ใส่ {name})"],
+      ["attachErr", "ข้อความอัปโหลดไม่สำเร็จ (ใส่ {error})"],
+      ["attachTooBig", "ข้อความไฟล์ใหญ่เกิน (ใส่ {name} {mb})"],
+      ["attachNeedServer", "ข้อความยังไม่เชื่อมเซิร์ฟเวอร์"],
+      ["attachRemove", "ปุ่มเอาไฟล์ออกจากรายการ"]
     ];
 
     function defaultI18n() {
@@ -1153,7 +1481,19 @@
           confirmClearOk: "ล้างคำตอบ",
           restoredNotice: "กู้คืนคำตอบที่บันทึกไว้แล้ว",
           autosavedAt: "บันทึกอัตโนมัติ {t}",
-          timerReady: "ยังไม่เริ่ม"
+          timerReady: "ยังไม่เริ่ม",
+          guideHeading: "แนวทางการสอบ QE (สรุป)",
+          guideAck: "ข้าพเจ้าได้อ่านแนวทางการสอบและเกณฑ์การประเมินแล้ว",
+          guideNeedAck: "กรุณาอ่านแนวทางการสอบและติ๊กยืนยันก่อนเข้าห้องสอบ",
+          scopeHeading: "ขอบเขตของหมวด",
+          attachHeading: "แนบไฟล์คำตอบ (ถ้ามี)",
+          attachNote: "กรณีเขียนด้วยมือ ให้ถ่ายรูปหรือสแกนแล้วแนบที่นี่ รองรับ PDF รูปภาพ หรือ Word ไม่เกิน {mb} MB ต่อไฟล์",
+          attachUploading: "กำลังอัปโหลด {name} ...",
+          attachDone: "อัปโหลด {name} แล้ว",
+          attachErr: "อัปโหลดไม่สำเร็จ: {error}",
+          attachTooBig: "{name} ใหญ่เกิน {mb} MB",
+          attachNeedServer: "ยังไม่ได้เชื่อมต่อเซิร์ฟเวอร์สอบ จึงอัปโหลดไฟล์ไม่ได้",
+          attachRemove: "เอาออกจากรายการ"
         },
         en: {
           appTitle: "QE Qualification Exam 2569",
@@ -1214,55 +1554,66 @@
           confirmClearOk: "Clear the answer",
           restoredNotice: "Restored your previously saved answers",
           autosavedAt: "Autosaved {t}",
-          timerReady: "Not started"
+          timerReady: "Not started",
+          guideHeading: "QE exam guidelines (summary)",
+          guideAck: "I have read the exam guidelines and assessment criteria",
+          guideNeedAck: "Please read the guidelines and tick the box before entering the exam room.",
+          scopeHeading: "Category scope",
+          attachHeading: "Attach answer files (optional)",
+          attachNote: "If you write by hand, photograph or scan your pages and attach them here. PDF, images or Word, up to {mb} MB per file.",
+          attachUploading: "Uploading {name}...",
+          attachDone: "Uploaded {name}",
+          attachErr: "Upload failed: {error}",
+          attachTooBig: "{name} is larger than {mb} MB",
+          attachNeedServer: "The exam server is not connected, so files cannot be uploaded.",
+          attachRemove: "Remove from list"
         }
       };
     }
 
+    function questionFromBank(slot, cat, bankId) {
+      const c = CATEGORIES[cat] || CATEGORIES[1];
+      const b = bankById(bankId) || bankForCat(cat)[0];
+      return Object.assign({}, slot, {
+        cat: Number(cat),
+        bankId: b ? b.id : "",
+        points: c.points,
+        titleTh: c.titleTh,
+        titleEn: c.titleEn,
+        th: b ? b.th : "",
+        en: b ? b.en : ""
+      });
+    }
+
     function defaultQuestions() {
       return [
-        {
-          points: 10,
+        questionFromBank({
           durationMin: 150,
           date: "2026-11-24",
           room: "A 301",
           startTime: "09:00",
           endTime: "11:30",
-          titleTh: "ทฤษฎีทางจิตวิทยา",
-          titleEn: "Psychological Theory",
           infoTh: "วันอังคารที่ ๒๔ พฤศจิกายน ๒๕๖๙ เวลา ๐๙.๐๐–๑๑.๓๐ น. ห้อง A 301",
-          infoEn: "Tuesday, 24 November 2026, 09:00–11:30, Room A 301",
-          th: "(แอดมินใส่โจทย์ข้อสอบวิชานี้)",
-          en: "(Admin: enter the exam question for this subject)"
-        },
-        {
-          points: 10,
+          infoEn: "Tuesday, 24 November 2026, 09:00–11:30, Room A 301"
+        }, 1, "1.1"),
+        questionFromBank({
           durationMin: 120,
           date: "2026-11-24",
           room: "A 301",
           startTime: "12:30",
           endTime: "14:30",
-          titleTh: "วิธีวิทยาทางการวิจัย",
-          titleEn: "Research Methodology",
           infoTh: "วันอังคารที่ ๒๔ พฤศจิกายน ๒๕๖๙ เวลา ๑๒.๓๐–๑๔.๓๐ น. ห้อง A 301",
-          infoEn: "Tuesday, 24 November 2026, 12:30–14:30, Room A 301",
-          th: "(แอดมินใส่โจทย์ข้อสอบวิชานี้)",
-          en: "(Admin: enter the exam question for this subject)"
-        },
-        {
-          points: 10,
+          infoEn: "Tuesday, 24 November 2026, 12:30–14:30, Room A 301"
+        }, 3, "3.1"),
+        questionFromBank({
           durationMin: 110,
           date: "2026-11-24",
           room: "A 301",
           startTime: "14:40",
           endTime: "16:30",
-          titleTh: "วิชาจิตวิทยาประยุกต์",
-          titleEn: "Applied Psychology",
           infoTh: "วันอังคารที่ ๒๔ พฤศจิกายน ๒๕๖๙ เวลา ๑๔.๔๐–๑๖.๓๐ น. ห้อง A 301",
-          infoEn: "Tuesday, 24 November 2026, 14:40–16:30, Room A 301",
-          th: "(แอดมินใส่โจทย์ข้อสอบวิชานี้)",
-          en: "(Admin: enter the exam question for this subject)"
-        }
+          infoEn: "Tuesday, 24 November 2026, 14:40–16:30, Room A 301"
+        }, 2, "2.1")
       ];
     }
 
@@ -1271,15 +1622,34 @@
       if (!Array.isArray(parsed) || parsed.length !== 3) return base;
       return base.map((def, i) => {
         const q = parsed[i] || {};
-        if (!q.titleTh && !q.titleEn && q.durationMin == null) {
-          return Object.assign({}, def, { points: q.points != null ? q.points : def.points });
+        if (!q.bankId || !bankById(q.bankId)) {
+          // Config saved before the question bank existed: keep schedule fields, take the question from the bank.
+          const keep = {};
+          ["durationMin", "date", "room", "startTime", "endTime", "infoTh", "infoEn"].forEach(function (k) {
+            if (q[k] != null && q[k] !== "") keep[k] = q[k];
+          });
+          const merged = Object.assign({}, def, keep);
+          const d = Number(merged.durationMin);
+          merged.durationMin = d > 0 ? d : def.durationMin;
+          return merged;
         }
         const duration = Number(q.durationMin);
+        const cat = Number(q.cat) || bankById(q.bankId).cat;
         return Object.assign({}, def, q, {
+          cat: cat,
           durationMin: duration > 0 ? duration : def.durationMin,
-          points: q.points != null ? q.points : def.points
+          points: q.points != null && q.points !== "" ? Number(q.points) : CATEGORIES[cat].points
         });
       });
+    }
+
+    function normalizeGuide(g) {
+      const base = defaultGuide();
+      if (!g || typeof g !== "object") return base;
+      return {
+        th: typeof g.th === "string" && g.th.trim() ? g.th : base.th,
+        en: typeof g.en === "string" && g.en.trim() ? g.en : base.en
+      };
     }
 
     function defaultConfig() {
@@ -1287,13 +1657,46 @@
         theme: { preset: "redgold", primary: "#9b1b30", accent: "#c9a227" },
         logos: { mcu: null, prog: null },
         i18n: defaultI18n(),
-        questions: defaultQuestions()
+        questions: defaultQuestions(),
+        guide: defaultGuide(),
+        roster: DEFAULT_ROSTER.slice(),
+        graderNames: DEFAULT_GRADERS.map(function (g) { return g.name; }),
+        graders: DEFAULT_GRADERS.slice()
       };
+    }
+
+    function mergeConfig(parsed) {
+      const base = defaultConfig();
+      if (!parsed || typeof parsed !== "object") return base;
+      return {
+        theme: { ...base.theme, ...(parsed.theme || {}) },
+        logos: { ...base.logos, ...(parsed.logos || {}) },
+        i18n: {
+          th: { ...base.i18n.th, ...((parsed.i18n || {}).th || {}) },
+          en: { ...base.i18n.en, ...((parsed.i18n || {}).en || {}) }
+        },
+        questions: normalizeQuestions(parsed.questions),
+        guide: normalizeGuide(parsed.guide),
+        roster: normalizeRoster(parsed.roster),
+        graderNames: Array.isArray(parsed.graderNames) ? parsed.graderNames.map(String) : base.graderNames,
+        graders: Array.isArray(parsed.graders) ? parsed.graders : base.graders
+      };
+    }
+
+    // Copy of the config that is safe to publish: grader codes never leave the admin's browser except to the server.
+    function publicConfig() {
+      const copy = JSON.parse(JSON.stringify(config));
+      delete copy.graders;
+      copy.graderNames = (config.graders || []).map(function (g) { return g.name; });
+      return copy;
     }
 
     function loadConfig() {
       try {
-        const raw = localStorage.getItem(STORE_KEY);
+        // Prefer the config the admin published to the server (cached from the last fetch), then this browser's own save.
+        const cached = localStorage.getItem(CONFIG_CACHE_KEY);
+        const own = localStorage.getItem(STORE_KEY);
+        const raw = (isAdminRoute() && own) ? own : (cached || own);
         if (!raw) return defaultConfig();
         const parsed = JSON.parse(raw);
         const base = defaultConfig();
@@ -1304,7 +1707,11 @@
             th: { ...base.i18n.th, ...((parsed.i18n || {}).th || {}) },
             en: { ...base.i18n.en, ...((parsed.i18n || {}).en || {}) }
           },
-          questions: normalizeQuestions(parsed.questions)
+          questions: normalizeQuestions(parsed.questions),
+          guide: normalizeGuide(parsed.guide),
+          roster: normalizeRoster(parsed.roster),
+          graderNames: Array.isArray(parsed.graderNames) ? parsed.graderNames.map(String) : base.graderNames,
+          graders: Array.isArray(parsed.graders) ? parsed.graders : base.graders
         };
       } catch (e) {
         return defaultConfig();
@@ -1321,6 +1728,9 @@
       lang: "th",
       q: 0,
       answers: ["", "", ""],
+      attachments: [[], [], []],
+      lockedQ: [null, null, null],
+      uploading: 0,
       pasteAttempts: 0,
       pasteLog: [],
       lastSave: "",
@@ -1431,6 +1841,9 @@
         examDate: $("examDate").value,
         startTime: $("startTime").value,
         answers: state.answers.slice(),
+        attachments: state.attachments.map(function (list) { return list.slice(); }),
+        questionSet: questionSetLabel(),
+        lockedQ: state.lockedQ.slice(),
         currentSubject: state.q,
         subjectStartedAt: state.subjectStartedAt.slice(),
         subjectFinished: state.subjectFinished.slice(),
@@ -1512,6 +1925,14 @@
       state.answers = [0, 1, 2].map(function (i) {
         return (data.answers && data.answers[i]) ? String(data.answers[i]) : "";
       });
+      state.attachments = [0, 1, 2].map(function (i) {
+        const list = data.attachments && data.attachments[i];
+        return Array.isArray(list) ? list.filter(function (f) { return f && f.fileId; }) : [];
+      });
+      state.lockedQ = [0, 1, 2].map(function (i) {
+        const v = data.lockedQ && data.lockedQ[i];
+        return v && typeof v === "object" ? v : null;
+      });
       state.q = Math.max(0, Math.min(2, Number(data.currentSubject) || 0));
       state.subjectStartedAt = [0, 1, 2].map(function (i) {
         const v = data.subjectStartedAt && data.subjectStartedAt[i];
@@ -1578,6 +1999,7 @@
       if (bar) bar.classList.toggle("hidden", !show);
       const fields = document.querySelector("#infoCard .grid-fields");
       if (fields) fields.classList.toggle("hidden", show);
+      if ($("rosterField")) $("rosterField").classList.toggle("hidden", show);
       lockCandidateFields(show);
     }
 
@@ -1693,6 +2115,8 @@
       const i = state.q;
       if (state.submitted || !state.entered || isSubjectStarted(i)) return;
       state.subjectStartedAt[i] = Date.now();
+      const cq = config.questions[i] || {};
+      state.lockedQ[i] = { bankId: cq.bankId || "", cat: cq.cat || null, th: cq.th || "", en: cq.en || "", titleTh: cq.titleTh || "", titleEn: cq.titleEn || "" };
       if (!state.startedAt) state.startedAt = fmtNow();
       if (i === 0) {
         const clock = fmtClock(state.subjectStartedAt[i]);
@@ -1744,7 +2168,14 @@
         $("entryErr").textContent = t().entryNeedInfo;
         return false;
       }
+      if ($("guideAck") && !$("guideAck").checked) {
+        $("entryErr").textContent = t().guideNeedAck;
+        if ($("guideDetails")) $("guideDetails").open = true;
+        if ($("guideCard")) $("guideCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        return false;
+      }
       $("entryErr").textContent = "";
+      if ($("guideDetails")) $("guideDetails").open = false;
       const sid = currentStudentId();
       const existing = loadProgressForSid(sid);
       if (existing) {
@@ -1803,6 +2234,8 @@
       }
       $("adminOpenBtn").textContent = L.adminBtn;
       $("enterExamBtn").textContent = L.enterExam;
+      renderGuide();
+      renderRosterPick();
       const bar = $("candidateBar");
       if (bar) {
         bar.textContent = fmt(L.candidateBar, {
@@ -1816,6 +2249,193 @@
       else clearQuestionDom();
       renderPasteBanner();
       validateSid(false);
+    }
+
+    function fillRosterSelect(sel, sid) {
+      if (!sel) return;
+      const en = state.lang === "en";
+      const roster = config.roster || [];
+      sel.innerHTML = "";
+      const head = document.createElement("option");
+      head.value = "";
+      head.textContent = en ? "— Select your name —" : "— เลือกชื่อ —";
+      sel.appendChild(head);
+      roster.forEach(function (r) {
+        const o = document.createElement("option");
+        o.value = r.sid;
+        o.textContent = r.sid + " · " + r.name;
+        sel.appendChild(o);
+      });
+      const other = document.createElement("option");
+      other.value = "__other";
+      other.textContent = en ? "— My name is not listed (type it below) —" : "— ไม่มีชื่อในรายการ (กรอกเองด้านล่าง) —";
+      sel.appendChild(other);
+      if (sid && roster.some(function (r) { return r.sid === sid; })) sel.value = sid;
+      else if (sid) sel.value = "__other";
+    }
+
+    function renderRosterPick() {
+      fillRosterSelect($("rosterPick"), currentStudentId());
+      if ($("lblRoster")) $("lblRoster").textContent = state.lang === "en" ? "Select your name from the candidate list" : "เลือกชื่อของท่านจากรายชื่อผู้เข้าสอบ";
+    }
+
+    function onRosterPick(selId, sidId, nameId) {
+      const v = $(selId).value;
+      if (v === "__other") {
+        $(sidId).value = "";
+        $(nameId).value = "";
+        $(sidId).focus();
+        return;
+      }
+      const r = (config.roster || []).find(function (x) { return x.sid === v; });
+      if (!r) return;
+      $(sidId).value = r.sid;
+      $(nameId).value = r.name;
+    }
+
+    function renderGraderNames() {
+      const dl = $("graderNameList");
+      if (!dl) return;
+      dl.innerHTML = "";
+      (config.graderNames || []).forEach(function (n) {
+        const o = document.createElement("option");
+        o.value = n;
+        dl.appendChild(o);
+      });
+    }
+
+    function renderGuide() {
+      const L = t();
+      if ($("guideHeading")) $("guideHeading").textContent = L.guideHeading;
+      if ($("guideBody")) $("guideBody").textContent = (config.guide && config.guide[state.lang]) || defaultGuide()[state.lang];
+      if ($("guideAckLabel")) $("guideAckLabel").textContent = L.guideAck;
+      if ($("guideAckWrap")) $("guideAckWrap").classList.toggle("hidden", !!state.entered);
+      if ($("guideDetails") && !state.guideRendered) {
+        $("guideDetails").open = !state.entered;
+        state.guideRendered = true;
+      }
+      if ($("guideCard")) $("guideCard").classList.toggle("hidden", isStaffRoute());
+    }
+
+    function fmtBytes(n) {
+      const v = Number(n) || 0;
+      if (v >= 1048576) return (v / 1048576).toFixed(1) + " MB";
+      if (v >= 1024) return Math.round(v / 1024) + " KB";
+      return v + " B";
+    }
+
+    function readFileBase64(file) {
+      return new Promise(function (resolve, reject) {
+        const r = new FileReader();
+        r.onload = function () {
+          const res = String(r.result || "");
+          const idx = res.indexOf(",");
+          resolve(idx >= 0 ? res.slice(idx + 1) : res);
+        };
+        r.onerror = function () { reject(r.error || new Error("read error")); };
+        r.readAsDataURL(file);
+      });
+    }
+
+    // Upload one file to Google Drive through the Apps Script. meta: studentId, fullName, subject (1-3), uploadedBy, role, adminKey
+    async function uploadFileToServer(file, meta) {
+      if (!isAppsScriptConfigured()) throw new Error(t().attachNeedServer);
+      if (file.size > MAX_UPLOAD_MB * 1048576) {
+        throw new Error(fmt(t().attachTooBig, { name: file.name, mb: MAX_UPLOAD_MB }));
+      }
+      const data = await readFileBase64(file);
+      const q = config.questions[Number(meta.subject) - 1] || {};
+      const res = await postApps({
+        action: "upload",
+        adminKey: meta.adminKey || "",
+        studentId: meta.studentId,
+        fullName: meta.fullName,
+        subject: String(meta.subject),
+        subjectTitle: q.titleTh || "",
+        bankId: meta.bankId || q.bankId || "",
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: String(file.size),
+        data: data,
+        uploadedBy: meta.uploadedBy || "",
+        role: meta.role || "student",
+        sessionId: meta.sessionId || "",
+        note: meta.note || ""
+      });
+      if (!res || !res.ok) throw new Error((res && res.error) || "upload failed");
+      return {
+        fileId: res.fileId,
+        url: res.url || "",
+        name: res.name || file.name,
+        size: file.size,
+        mimeType: file.type || "",
+        uploadedAt: fmtNow()
+      };
+    }
+
+    function renderAttachments() {
+      const L = t();
+      const box = $("attachBox");
+      if (!box) return;
+      const i = state.q;
+      if ($("attachHeading")) $("attachHeading").textContent = L.attachHeading;
+      if ($("attachNote")) $("attachNote").textContent = fmt(L.attachNote, { mb: MAX_UPLOAD_MB });
+      const input = $("attachInput");
+      if (input) input.disabled = !!(state.submitted || state.sending);
+      const list = $("attachList");
+      list.innerHTML = "";
+      (state.attachments[i] || []).forEach(function (f, idx) {
+        const li = document.createElement("li");
+        const left = document.createElement("span");
+        left.innerHTML = "📎 " + escapeHtml(f.name) + " <span class='meta'>" + escapeHtml(fmtBytes(f.size)) + " · " + escapeHtml(f.uploadedAt || "") + "</span>";
+        li.appendChild(left);
+        if (!state.submitted) {
+          const rm = document.createElement("button");
+          rm.type = "button";
+          rm.className = "btn small";
+          rm.textContent = L.attachRemove;
+          rm.addEventListener("click", function () {
+            state.attachments[i].splice(idx, 1);
+            state.pasteLog.push("subject" + (i + 1) + " attachment removed " + f.name + " " + fmtClock(Date.now()));
+            persistProgress();
+            renderAttachments();
+          });
+          li.appendChild(rm);
+        }
+        list.appendChild(li);
+      });
+    }
+
+    async function handleAttachInput(e) {
+      const input = e.target;
+      const files = Array.prototype.slice.call(input.files || []);
+      input.value = "";
+      if (!files.length || state.submitted) return;
+      const i = state.q;
+      const status = $("attachStatus");
+      for (const file of files) {
+        if (status) { status.className = "note"; status.textContent = fmt(t().attachUploading, { name: file.name }); }
+        state.uploading++;
+        try {
+          const rec = await uploadFileToServer(file, {
+            studentId: currentStudentId(),
+            fullName: $("fullName").value.trim(),
+            subject: i + 1,
+            uploadedBy: $("fullName").value.trim(),
+            role: "student",
+            sessionId: state.sessionId
+          });
+          state.attachments[i].push(rec);
+          state.pasteLog.push("subject" + (i + 1) + " attachment " + rec.name + " " + fmtClock(Date.now()));
+          persistProgress();
+          if (status) { status.className = "ok"; status.textContent = fmt(t().attachDone, { name: rec.name }); }
+        } catch (err) {
+          if (status) { status.className = "err"; status.textContent = fmt(t().attachErr, { error: String(err && err.message ? err.message : err) }); }
+        } finally {
+          state.uploading--;
+        }
+        if (state.q === i) renderAttachments();
+      }
     }
 
     function clearQuestionDom() {
@@ -1843,7 +2463,7 @@
         return;
       }
       const total = config.questions.length;
-      const q = config.questions[state.q];
+      const q = effectiveQuestion(state.q);
       const started = isSubjectStarted(state.q);
       $("qBadge").textContent = fmt(L.qBadge, { n: state.q + 1 });
       $("qPoints").textContent = fmt(L.qPoints, { n: q.points });
@@ -1853,6 +2473,16 @@
       $("progressText").textContent = fmt(L.progressText, { n: state.q + 1, total: total });
       $("progressBar").style.width = Math.round(((state.q + 1) / total) * 100) + "%";
       $("startGateBody").textContent = L.startGateBody;
+      const cat = CATEGORIES[q.cat];
+      const scope = $("scopeBox");
+      if (scope) {
+        scope.classList.toggle("hidden", !cat);
+        if (cat) {
+          scope.innerHTML = "<strong>" + escapeHtml(L.scopeHeading + " · " + (state.lang === "en" ? cat.titleEn : cat.titleTh)) + "</strong>\n" +
+            escapeHtml(state.lang === "en" ? cat.scopeEn : cat.scopeTh);
+        }
+      }
+      renderAttachments();
       $("startSubjectBtn").textContent = L.startSubject;
       $("startGate").classList.toggle("hidden", started);
       $("answerWrap").classList.toggle("hidden", !started);
@@ -1922,6 +2552,10 @@
 
     function openSubmitConfirm() {
       if (state.submitted || state.sending) return;
+      if (state.uploading > 0) {
+        $("result").innerHTML = '<p class="err">' + escapeHtml(state.lang === "en" ? "Please wait for file uploads to finish." : "กรุณารอให้อัปโหลดไฟล์เสร็จก่อนส่งคำตอบ") + "</p>";
+        return;
+      }
       if (!validateSid(true) || !$("fullName").value.trim()) {
         $("result").innerHTML = '<p class="err">' + t().needId + "</p>";
         $("submitCard").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2019,6 +2653,38 @@
       return url.length > 0 && url !== "PASTE_WEB_APP_URL";
     }
 
+    // The question a student actually sees: frozen at the moment the subject was started.
+    function effectiveQuestion(i) {
+      const q = config.questions[i] || {};
+      const lock = state.lockedQ && state.lockedQ[i];
+      return lock ? Object.assign({}, q, lock) : q;
+    }
+
+    function questionSetLabel() {
+      return config.questions.map(function (q, i) {
+        return "S" + (i + 1) + "=" + (effectiveQuestion(i).bankId || "custom");
+      }).join("; ");
+    }
+
+    function parseQuestionSet(label) {
+      const out = {};
+      String(label || "").split(/[;|]/).forEach(function (part) {
+        const m = part.trim().match(/^S(\d)\s*=\s*([\w.]+)/);
+        if (m) out[Number(m[1])] = m[2];
+      });
+      return out;
+    }
+
+    function attachmentsLabel() {
+      const lines = [];
+      state.attachments.forEach(function (list, i) {
+        list.forEach(function (f) {
+          lines.push("[S" + (i + 1) + "] " + f.name + (f.url ? " " + f.url : ""));
+        });
+      });
+      return lines.join("\n");
+    }
+
     function buildPayload(status, submitTime) {
       if (!state.startedAt) state.startedAt = fmtNow();
       const starts = subjectStartEntries();
@@ -2049,7 +2715,10 @@
         pasteAttempts: String(state.pasteAttempts),
         sessionId: state.sessionId,
         device: deviceLabel(),
-        screen: window.innerWidth + "×" + window.innerHeight
+        screen: window.innerWidth + "×" + window.innerHeight,
+        questionSet: questionSetLabel(),
+        attachments: attachmentsLabel(),
+        submissionMode: "ออนไลน์"
       };
     }
 
@@ -2074,7 +2743,10 @@
         payload.pasteAttempts,
         payload.sessionId,
         payload.device,
-        payload.screen
+        payload.screen,
+        payload.questionSet,
+        payload.attachments,
+        payload.submissionMode
       ];
     }
 
@@ -2242,12 +2914,14 @@
       renderGradeList();
       renderSubmissionPick();
       renderAnswerPane();
+      renderManualSubjects();
       updateGradeSummary();
     }
 
     function applyCentralList(key, data) {
       centralMode = true;
       centralSubmissions = (data.submissions || []).map(normalizeSubmission);
+      centralFiles = Array.isArray(data.files) ? data.files : [];
       if ($("gradeAdminKey")) $("gradeAdminKey").value = key;
       const note = $("gradeConnectNote");
       const mode = $("gradeModeNote");
@@ -2263,12 +2937,8 @@
       const err = $("committeeKeyErr");
       const note = $("committeeLoginNote");
       const btn = $("committeeEnter");
-      if (!name) {
-        if (err) err.textContent = "กรุณากรอกชื่อผู้ให้คะแนน";
-        return false;
-      }
       if (!String(key).trim()) {
-        if (err) err.textContent = "กรุณากรอกรหัสผู้ดูแล";
+        if (err) err.textContent = "กรุณากรอกรหัสผู้ตรวจ";
         return false;
       }
       if (err) err.textContent = "";
@@ -2277,9 +2947,25 @@
       try {
         const data = await postApps({ action: "list", adminKey: key });
         if (data && data.ok && Array.isArray(data.submissions)) {
+          const serverName = data.grader && data.grader.role === "grader" ? data.grader.name : "";
+          if (serverName && name && name !== serverName) {
+            if (err) err.textContent = "รหัสผู้ตรวจนี้เป็นของ " + serverName + " ไม่ตรงกับชื่อที่เลือก";
+            if (note) note.textContent = "";
+            return false;
+          }
+          const finalName = serverName || name;
+          if (!finalName) {
+            if (err) err.textContent = "กรุณาระบุชื่อผู้ให้คะแนน";
+            if (note) note.textContent = "";
+            return false;
+          }
           setCommitteeKey(key);
-          try { sessionStorage.setItem(COMMITTEE_NAME_STORE, name); } catch (e) {}
-          if ($("graderName")) $("graderName").value = name;
+          try { sessionStorage.setItem(COMMITTEE_NAME_STORE, finalName); } catch (e) {}
+          if ($("graderName")) {
+            $("graderName").value = finalName;
+            $("graderName").readOnly = !!serverName;
+          }
+          if ($("committeeName")) $("committeeName").value = finalName;
           applyCentralList(key, data);
           if (note) note.textContent = "";
           showCommitteeWorkspace();
@@ -2343,6 +3029,7 @@
       try { sessionStorage.removeItem(COMMITTEE_NAME_STORE); } catch (err) {}
       centralMode = false;
       centralSubmissions = [];
+      centralFiles = [];
       selectedSubmission = null;
       if ($("gradeAdminKey")) $("gradeAdminKey").value = "";
       if ($("committeeKey")) $("committeeKey").value = "";
@@ -2431,6 +3118,17 @@
         wrap.appendChild(pair);
         fields.appendChild(wrap);
       });
+      if ($("rosterText")) {
+        $("rosterText").value = (config.roster || []).map(function (r) { return r.sid + "\t" + r.name; }).join("\n");
+        $("rosterNote").textContent = (config.roster || []).length + " คน";
+      }
+      if ($("gradersText")) {
+        $("gradersText").value = (config.graders || []).map(function (g) { return g.code + "\t" + g.name; }).join("\n");
+        $("gradersNote").textContent = (config.graders || []).length + " ท่าน";
+      }
+      if ($("guideTh")) $("guideTh").value = (config.guide && config.guide.th) || "";
+      if ($("guideEn")) $("guideEn").value = (config.guide && config.guide.en) || "";
+      if ($("publishKey") && !$("publishKey").value) $("publishKey").value = getCommitteeKey() || "";
       const qbox = $("questionFields");
       qbox.innerHTML = "";
       config.questions.forEach((q, i) => {
@@ -2439,8 +3137,56 @@
         wrap.style.boxShadow = "none";
         wrap.innerHTML = "<h3 style='margin:0 0 8px'>วิชาที่ " + (i + 1) + "</h3>";
 
+        const catLab = document.createElement("label");
+        catLab.className = "field";
+        catLab.style.maxWidth = "520px";
+        catLab.innerHTML = "<span>หมวดเนื้อหาของวิชานี้</span>";
+        const catSel = document.createElement("select");
+        Object.keys(CATEGORIES).forEach(function (k) {
+          const opt = document.createElement("option");
+          opt.value = k;
+          opt.textContent = CATEGORIES[k].titleTh + " (" + CATEGORIES[k].points + "%)";
+          catSel.appendChild(opt);
+        });
+        catSel.value = String(q.cat || 1);
+        catSel.addEventListener("change", function () {
+          const keep = Object.assign({}, config.questions[i]);
+          config.questions[i] = questionFromBank(keep, Number(catSel.value), "");
+          renderAdmin();
+        });
+        catLab.appendChild(catSel);
+        wrap.appendChild(catLab);
+
+        const bankWrap = document.createElement("div");
+        bankWrap.style.marginTop = "10px";
+        bankWrap.innerHTML = "<p class='note' style='margin:0 0 6px;font-weight:600'>เลือกโจทย์ 1 ข้อ</p>";
+        bankForCat(q.cat || 1).forEach(function (b) {
+          const lab = document.createElement("label");
+          lab.className = "bank-option" + (q.bankId === b.id ? " selected" : "");
+          const radio = document.createElement("input");
+          radio.type = "radio";
+          radio.name = "bank-" + i;
+          radio.value = b.id;
+          radio.checked = q.bankId === b.id;
+          radio.addEventListener("change", function () {
+            const keep = Object.assign({}, config.questions[i]);
+            config.questions[i] = questionFromBank(keep, b.cat, b.id);
+            renderAdmin();
+          });
+          const body = document.createElement("div");
+          body.innerHTML = "<span class='bank-label'>ข้อ " + b.no + " (รหัส " + b.id + ")</span><span class='bank-text'>" + escapeHtml(b.th) + "</span>";
+          lab.appendChild(radio);
+          lab.appendChild(body);
+          bankWrap.appendChild(lab);
+        });
+        wrap.appendChild(bankWrap);
+
+        const details = document.createElement("details");
+        details.style.marginTop = "8px";
+        details.innerHTML = "<summary class='note'>ปรับแก้ชื่อวิชาหรือข้อความโจทย์ที่แสดง (ไม่บังคับ)</summary>";
         const titlePair = document.createElement("div");
         titlePair.className = "pair";
+        titlePair.style.marginTop = "8px";
         [["titleTh", "ชื่อวิชา (ไทย)"], ["titleEn", "Subject title (English)"]].forEach(function (pairDef) {
           const lab = document.createElement("label");
           lab.className = "field";
@@ -2452,8 +3198,7 @@
           lab.appendChild(inp);
           titlePair.appendChild(lab);
         });
-        wrap.appendChild(titlePair);
-
+        details.appendChild(titlePair);
         const qPair = document.createElement("div");
         qPair.className = "pair";
         qPair.style.marginTop = "8px";
@@ -2462,13 +3207,14 @@
           lab.className = "field";
           lab.innerHTML = "<span>" + (lang === "th" ? "โจทย์ภาษาไทย" : "Question in English") + "</span>";
           const ta = document.createElement("textarea");
-          ta.rows = 3;
+          ta.rows = 6;
           ta.value = q[lang] || "";
           ta.addEventListener("input", () => { config.questions[i][lang] = ta.value; });
           lab.appendChild(ta);
           qPair.appendChild(lab);
         });
-        wrap.appendChild(qPair);
+        details.appendChild(qPair);
+        wrap.appendChild(details);
 
         const infoPair = document.createElement("div");
         infoPair.className = "pair";
@@ -2524,7 +3270,7 @@
       r.readAsDataURL(file);
     }
 
-    const RUBRIC_STORE = "qe-exam-rubric-config-v1";
+    const RUBRIC_STORE = "qe-exam-rubric-config-v2";
     const GRADES_STORE = "qe-exam-grades-v1";
     const GRADER_STORE = "qe-exam-grader-v1";
 
@@ -2536,21 +3282,21 @@
           { id: "research", percent: 20, nameTh: "การวิเคราะห์และสังเคราะห์งานวิจัย", nameEn: "Research Analytical Assignment" },
           { id: "oral", percent: 30, nameTh: "การสอบปากเปล่า", nameEn: "Oral Examination" }
         ],
-        formatNoteTh: "คะแนนตามรูปแบบการสอบเป็นการประเมินวิธีการแสดงสมรรถนะ ส่วนคะแนน 4 หมวดเนื้อหาในข้อ 2 เป็นกรอบกำหนดขอบเขตความรู้ที่ต้องครอบคลุมในการออกข้อสอบ (ข้อ 5.1)",
-        formatNoteEn: "Format weights assess how competence is demonstrated. The four content categories in section 2 frame the knowledge the exam must cover (section 5.1).",
+        formatNoteTh: "คะแนนตามรูปแบบการสอบเป็นการประเมินวิธีการแสดงสมรรถนะ ส่วนคะแนน 3 หมวดเนื้อหาในข้อ 2 เป็นกรอบกำหนดขอบเขตความรู้ที่ต้องครอบคลุมในการออกข้อสอบ (ข้อ 5.1)",
+        formatNoteEn: "Format weights assess how competence is demonstrated. The three content categories in section 2 frame the knowledge the exam must cover (section 5.1).",
         categories: [
-          { id: "c1", no: 1, nameTh: "หมวดที่ 1 พุทธธรรมและพุทธจิตวิทยา", nameEn: "Buddhist Philosophy and Buddhist Psychology", blueprintMax: 20, format: "ข้อเขียน", minPercent: 60 },
-          { id: "c2", no: 2, nameTh: "หมวดที่ 2 ทฤษฎีจิตวิทยาและการบูรณาการศาสตร์", nameEn: "Psychological Theories and Interdisciplinary Integration", blueprintMax: 30, format: "ข้อเขียน", minPercent: 60 },
-          { id: "c3", no: 3, nameTh: "หมวดที่ 3 ระเบียบวิธีวิจัยและสถิติ", nameEn: "Research Methodology and Statistical Analysis", blueprintMax: 20, format: "ข้อเขียน", minPercent: 60 },
-          { id: "c4", no: 4, nameTh: "หมวดที่ 4 การคิดเชิงวิพากษ์และการสร้างองค์ความรู้ใหม่", nameEn: "Critical Thinking and Original Knowledge Creation", blueprintMax: 30, format: "ปากเปล่า", minPercent: 60 },
+          { id: "c1", no: 1, nameTh: "หมวดที่ 1 แนวคิดและทฤษฎีทางจิตวิทยา", nameEn: "Psychological Concepts and Theories", blueprintMax: 20, format: "ข้อเขียน", minPercent: 60 },
+          { id: "c2", no: 2, nameTh: "หมวดที่ 2 พุทธจิตวิทยาประยุกต์", nameEn: "Applied Buddhist Psychology", blueprintMax: 30, format: "ข้อเขียน", minPercent: 60 },
+          { id: "c3", no: 3, nameTh: "หมวดที่ 3 วิธีวิทยาการวิจัยและการสร้างองค์ความรู้", nameEn: "Research Methodology and Knowledge Creation", blueprintMax: 20, format: "ข้อเขียน", minPercent: 60 },
+          { id: "c4", no: 4, nameTh: "เกณฑ์ร่วม: การคิดวิเคราะห์และวิพากษ์", nameEn: "Shared criterion: analytical and critical thinking", blueprintMax: null, format: "", minPercent: 60 },
           { id: "c5", no: 5, nameTh: "เกณฑ์ร่วม: ความพร้อมในการวิจัยอิสระและจริยธรรม", nameEn: "Shared criterion: readiness for independent research and ethics", blueprintMax: null, format: "", minPercent: 60 }
         ],
         criteria: [
-          { id: "r1", categoryId: "c1", nameTh: "ความรู้ด้านพุทธธรรมและพุทธจิตวิทยา", nameEn: "Knowledge of Buddhist doctrine and Buddhist psychology", measureTh: "ความถูกต้องและความเข้าใจเชิงลึก", measureEn: "Accuracy and in-depth understanding", max: 25 },
-          { id: "r2", categoryId: "c2", nameTh: "ความรู้ด้านทฤษฎีจิตวิทยาและการบูรณาการ", nameEn: "Knowledge of psychological theory and integration", measureTh: "การเชื่อมโยงและเปรียบเทียบศาสตร์", measureEn: "Connecting and comparing disciplines", max: 15 },
+          { id: "r1", categoryId: "c2", nameTh: "ความรู้ด้านพุทธธรรมและพุทธจิตวิทยา", nameEn: "Knowledge of Buddhist doctrine and Buddhist psychology", measureTh: "ความถูกต้องและความเข้าใจเชิงลึก", measureEn: "Accuracy and in-depth understanding", max: 25 },
+          { id: "r2", categoryId: "c1", nameTh: "ความรู้ด้านทฤษฎีจิตวิทยาและการบูรณาการ", nameEn: "Knowledge of psychological theory and integration", measureTh: "การเชื่อมโยงและเปรียบเทียบศาสตร์", measureEn: "Connecting and comparing disciplines", max: 15 },
           { id: "r3", categoryId: "c3", nameTh: "ระเบียบวิธีวิจัยและสถิติ", nameEn: "Research methodology and statistics", measureTh: "การเลือกใช้และการวิเคราะห์อย่างถูกต้อง", measureEn: "Appropriate selection and correct analysis", max: 20 },
           { id: "r4", categoryId: "c4", nameTh: "การคิดวิเคราะห์และวิพากษ์", nameEn: "Analytical and critical thinking", measureTh: "การใช้เหตุผลและประเมินข้อจำกัด", measureEn: "Reasoning and evaluating limitations", max: 15 },
-          { id: "r5", categoryId: "c4", nameTh: "การสังเคราะห์และสร้างองค์ความรู้ใหม่", nameEn: "Synthesis and creation of new knowledge", measureTh: "ความใหม่และคุณค่าทางวิชาการ", measureEn: "Originality and academic value", max: 15 },
+          { id: "r5", categoryId: "c3", nameTh: "การสังเคราะห์และสร้างองค์ความรู้ใหม่", nameEn: "Synthesis and creation of new knowledge", measureTh: "ความใหม่และคุณค่าทางวิชาการ", measureEn: "Originality and academic value", max: 15 },
           { id: "r6", categoryId: "c5", nameTh: "ความพร้อมในการวิจัยอิสระและจริยธรรม", nameEn: "Readiness for independent research and ethics", measureTh: "ความเป็นไปได้และความรับผิดชอบทางวิชาการ", measureEn: "Feasibility and academic responsibility", max: 10 }
         ],
         levels: [
@@ -2614,6 +3360,7 @@
     let gradeScores = {};
     let gradeComments = {};
     let selectedSubmission = null;
+    let centralFiles = [];
 
     function rubricLang() {
       return state.lang === "en" ? "en" : "th";
@@ -2770,6 +3517,7 @@
         renderRubricEditor();
         renderGradeList();
         renderAnswerPane();
+        renderManualSubjects();
         updateGradeSummary();
       }
     }
@@ -2777,7 +3525,7 @@
     function renderRubricSourceNote() {
       const el = $("rubricSourceNote");
       if (!el) return;
-      el.textContent = "ค่าเริ่มต้นจากเอกสาร: 4 หมวดเนื้อหาข้อ 2 (20/30/20/30) · รูบริกข้อ 5.2 · ระดับคุณภาพข้อ 5.3 · เกณฑ์ตัดสินข้อ 5.4 · สัดส่วนรูปแบบข้อ 5.1 (50/20/30) ขั้นต่ำ 60% คิดจากคะแนนเต็มของเกณฑ์ 5.2 ในแต่ละหมวด เพราะน้ำหนักข้อ 2 กับข้อ 5.2 ในเอกสารไม่เท่ากันทุกหมวด";
+      el.textContent = "ค่าเริ่มต้นจากเอกสาร: 3 หมวดเนื้อหาข้อเขียนข้อ 2 (20/30/20) + เกณฑ์ร่วมการคิดวิพากษ์และความพร้อมวิจัย · รูบริกข้อ 5.2 · ระดับคุณภาพข้อ 5.3 · เกณฑ์ตัดสินข้อ 5.4 · สัดส่วนรูปแบบข้อ 5.1 (50/20/30) ขั้นต่ำ 60% คิดจากคะแนนเต็มของเกณฑ์ 5.2 ในแต่ละหมวด เพราะน้ำหนักข้อ 2 กับข้อ 5.2 ในเอกสารไม่เท่ากันทุกหมวด";
     }
 
     function renderRubricForm() {
@@ -3185,7 +3933,27 @@
       if (sub.examDate) parts.push("วันที่สอบ " + sub.examDate);
       if (sub.startTime) parts.push("เวลาเริ่ม " + sub.startTime);
       if (sub.submitTime) parts.push("ส่งเมื่อ " + sub.submitTime);
+      if (sub.submissionMode && sub.submissionMode !== "ออนไลน์") parts.push("[" + sub.submissionMode + "]");
       return parts.join(" · ");
+    }
+
+    function filesForStudent(sid, subjectNo) {
+      return (centralFiles || []).filter(function (f) {
+        if (String(f.studentId) !== String(sid)) return false;
+        return subjectNo == null || String(f.subject) === String(subjectNo);
+      });
+    }
+
+    function submissionsForStudent(sid) {
+      return (centralSubmissions || []).filter(function (s) { return String(s.studentId) === String(sid); });
+    }
+
+    function questionTextFor(sub, n) {
+      const set = parseQuestionSet(sub && sub.questionSet);
+      const b = set[n] ? bankById(set[n]) : null;
+      if (b) return { id: b.id, text: b.th };
+      const q = config.questions[n - 1];
+      return q ? { id: q.bankId || "", text: q.th || "", fromConfig: true } : null;
     }
 
     function renderAnswerPane() {
@@ -3194,25 +3962,247 @@
       const sid = ($("gradeSid") && $("gradeSid").value || "").trim();
       let sub = selectedSubmission;
       if (!sub && sid) {
-        sub = (centralSubmissions || []).find(function (s) { return String(s.studentId) === sid; }) || null;
+        const list = submissionsForStudent(sid);
+        sub = list.length ? list[list.length - 1] : null;
       }
-      if (!sub) {
-        box.innerHTML = "<p class='note'>ยังไม่มีคำตอบในโหมดนี้ กรอกชื่อและรหัสแล้วให้คะแนนได้เลย หรือเชื่อมต่อ Apps Script รุ่นที่ 2 เพื่อดึงคำตอบจากชีต</p>";
+      const studentId = sub ? sub.studentId : sid;
+      const files = studentId ? filesForStudent(studentId) : [];
+      if (!sub && !files.length) {
+        box.innerHTML = "<p class='note'>ยังไม่มีคำตอบในโหมดนี้ กรอกชื่อและรหัสแล้วให้คะแนนได้เลย หรือเชื่อมต่อด้วย ADMIN_KEY เพื่อดึงคำตอบและไฟล์แนบจากชีต</p>";
         return;
       }
       const subj = ($("gradeSubject") && $("gradeSubject").value) || "overall";
-      const blocks = [];
-      const qs = [
-        { n: 1, text: sub.question1 },
-        { n: 2, text: sub.question2 },
-        { n: 3, text: sub.question3 }
-      ];
-      qs.forEach(function (q) {
-        if (subj !== "overall" && String(q.n) !== String(subj)) return;
-        const title = (config.questions[q.n - 1] && (state.lang === "en" ? config.questions[q.n - 1].titleEn : config.questions[q.n - 1].titleTh)) || ("วิชาที่ " + q.n);
-        blocks.push("<article class='answer-block'><h3>วิชาที่ " + q.n + " — " + escapeHtml(title) + "</h3><pre class='answer-read'>" + escapeHtml(q.text || "—") + "</pre></article>");
+      box.innerHTML = "";
+      const head = document.createElement("div");
+      head.innerHTML = "<p class='note'>" + escapeHtml(sub ? submissionMeta(sub) : ("รหัส " + studentId + " · มีเฉพาะไฟล์แนบ")) + "</p>";
+      const others = studentId ? submissionsForStudent(studentId).length : 0;
+      if (others > 1) head.innerHTML += "<p class='note'>นิสิตคนนี้มีการส่ง " + others + " ครั้งในชีต (แสดงครั้งที่เลือก/ล่าสุด)</p>";
+      box.appendChild(head);
+      [1, 2, 3].forEach(function (n) {
+        if (subj !== "overall" && String(n) !== String(subj)) return;
+        const cfgQ = config.questions[n - 1] || {};
+        const title = (state.lang === "en" ? cfgQ.titleEn : cfgQ.titleTh) || ("วิชาที่ " + n);
+        const art = document.createElement("article");
+        art.className = "answer-block";
+        const qt = questionTextFor(sub, n);
+        let html = "<h3>วิชาที่ " + n + " — " + escapeHtml(title) + "</h3>";
+        if (qt && qt.text) {
+          html += "<details><summary class='note'>โจทย์ที่นิสิตได้รับ" + (qt.id ? " (ข้อ " + escapeHtml(qt.id) + ")" : "") + (qt.fromConfig ? " — ตามค่าปัจจุบัน" : "") + "</summary><div class='q-in-pane'>" + escapeHtml(qt.text) + "</div></details>";
+        }
+        const text = sub ? sub["question" + n] : "";
+        html += "<pre class='answer-read'>" + escapeHtml(text || "—") + "</pre>";
+        art.innerHTML = html;
+        const fl = filesForStudent(studentId, n);
+        if (fl.length) {
+          const ul = document.createElement("ul");
+          ul.className = "attach-list";
+          fl.forEach(function (f) {
+            const li = document.createElement("li");
+            const who = f.role && f.role !== "student" ? " · อัปโหลดโดย " + (f.uploadedBy || f.role) : "";
+            li.innerHTML = "<span>📎 " + escapeHtml(f.fileName || f.name || "ไฟล์") + " <span class='meta'>" + escapeHtml(fmtBytes(f.size)) + " · " + escapeHtml(f.timestamp || "") + escapeHtml(who) + "</span></span>";
+            const actions = document.createElement("span");
+            actions.style.display = "flex";
+            actions.style.gap = "6px";
+            const view = document.createElement("button");
+            view.type = "button";
+            view.className = "btn small";
+            view.textContent = "เปิดดู";
+            const viewer = document.createElement("div");
+            view.addEventListener("click", function () { viewCentralFile(f, viewer, view); });
+            actions.appendChild(view);
+            if (f.url) {
+              const a = document.createElement("a");
+              a.className = "btn small";
+              a.href = f.url;
+              a.target = "_blank";
+              a.rel = "noopener";
+              a.textContent = "Drive ↗";
+              actions.appendChild(a);
+            }
+            li.appendChild(actions);
+            li.appendChild(viewer);
+            viewer.style.flexBasis = "100%";
+            ul.appendChild(li);
+          });
+          art.appendChild(ul);
+        }
+        box.appendChild(art);
       });
-      box.innerHTML = "<p class='note'>" + escapeHtml(submissionMeta(sub)) + "</p>" + blocks.join("");
+      const up = document.createElement("button");
+      up.type = "button";
+      up.className = "btn";
+      up.style.marginTop = "10px";
+      up.textContent = "อัปโหลดไฟล์เพิ่มให้นิสิตคนนี้";
+      up.addEventListener("click", function () {
+        if ($("manSid")) $("manSid").value = studentId || "";
+        if ($("manName")) $("manName").value = (sub && sub.fullName) || ($("gradeFullName") && $("gradeFullName").value) || "";
+        if (sub && $("manCohort")) $("manCohort").value = sub.cohort || "";
+        if ($("manCreateRow")) $("manCreateRow").checked = false;
+        if ($("manualSection")) $("manualSection").scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      box.appendChild(up);
+    }
+
+    const fileViewCache = {};
+
+    async function viewCentralFile(f, viewer, btn) {
+      if (viewer.dataset.open === "1") {
+        viewer.innerHTML = "";
+        viewer.dataset.open = "";
+        btn.textContent = "เปิดดู";
+        return;
+      }
+      btn.disabled = true;
+      btn.textContent = "กำลังโหลด...";
+      try {
+        let entry = fileViewCache[f.fileId];
+        if (!entry) {
+          const data = await postApps({ action: "getFile", adminKey: getAdminKey(), fileId: f.fileId });
+          if (!data || !data.ok) throw new Error((data && data.error) || "โหลดไฟล์ไม่ได้");
+          const bin = atob(data.data);
+          const bytes = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+          const blob = new Blob([bytes], { type: data.mimeType || f.mimeType || "application/octet-stream" });
+          entry = { url: URL.createObjectURL(blob), type: blob.type, name: data.name || f.fileName };
+          fileViewCache[f.fileId] = entry;
+        }
+        const type = entry.type || "";
+        let inner;
+        if (type.indexOf("image/") === 0) inner = "<img alt='' src='" + entry.url + "' />";
+        else if (type === "application/pdf") inner = "<iframe title='ไฟล์แนบ' src='" + entry.url + "'></iframe>";
+        else inner = "<p class='note' style='padding:10px'>ไฟล์ชนิดนี้แสดงในเบราว์เซอร์ไม่ได้</p>";
+        viewer.innerHTML = "<div class='file-viewer'>" + inner + "</div><a class='btn small' style='margin-top:6px' download='" + escapeHtml(entry.name || "file") + "' href='" + entry.url + "'>ดาวน์โหลด</a>";
+        viewer.dataset.open = "1";
+        btn.textContent = "ปิด";
+      } catch (err) {
+        viewer.innerHTML = "<p class='err'>" + escapeHtml(String(err && err.message ? err.message : err)) + "</p>";
+        btn.textContent = "เปิดดู";
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function refreshCentral() {
+      const note = $("gradeConnectNote");
+      if (!getAdminKey()) {
+        if (note) note.textContent = "กรุณาใส่ ADMIN_KEY แล้วกดเชื่อมต่อก่อน";
+        return;
+      }
+      const ok = await connectCentral();
+      if (ok && selectedSubmission) {
+        const sid = String(selectedSubmission.studentId);
+        const list = submissionsForStudent(sid);
+        selectedSubmission = list.length ? list[list.length - 1] : null;
+      }
+      renderAnswerPane();
+    }
+
+    function renderManualSubjects() {
+      fillRosterSelect($("manRosterPick"), ($("manSid") && $("manSid").value) || "");
+      const box = $("manSubjects");
+      if (!box) return;
+      box.innerHTML = "";
+      config.questions.forEach(function (q, i) {
+        const n = i + 1;
+        const wrap = document.createElement("div");
+        wrap.className = "editor-row";
+        const sel = bankForCat(q.cat || 1).map(function (b) {
+          return "<option value='" + b.id + "'" + (b.id === q.bankId ? " selected" : "") + ">ข้อ " + b.id + "</option>";
+        }).join("");
+        wrap.innerHTML = "<p style='margin:0 0 6px;font-weight:600'>วิชาที่ " + n + " — " + escapeHtml(q.titleTh || "") + "</p>" +
+          "<div class='grid-fields'>" +
+          "<label class='field'><span>โจทย์ที่นิสิตทำ</span><select id='manBank" + n + "'>" + sel + "</select></label>" +
+          "<label class='field'><span>ไฟล์สแกน/รูปถ่ายคำตอบ</span><input type='file' id='manFile" + n + "' multiple accept='.pdf,.jpg,.jpeg,.png,.heic,.webp,.doc,.docx,image/*,application/pdf' /></label>" +
+          "</div>" +
+          "<label class='field' style='margin-top:8px'><span>คำตอบที่พิมพ์ถอดจากกระดาษ (ไม่บังคับ)</span><textarea id='manText" + n + "' rows='3'></textarea></label>";
+        box.appendChild(wrap);
+      });
+    }
+
+    async function submitManual() {
+      const note = $("manNote");
+      const key = getAdminKey();
+      const sid = ($("manSid").value || "").trim();
+      const name = ($("manName").value || "").trim();
+      const createRow = $("manCreateRow").checked;
+      if (!key) { note.className = "err"; note.textContent = "ต้องเชื่อมต่อด้วย ADMIN_KEY ก่อน"; return; }
+      if (!/^\d{10}$/.test(sid) || !name) { note.className = "err"; note.textContent = "กรุณากรอกรหัสนักศึกษา 10 หลักและชื่อ-นามสกุล"; return; }
+      const grader = ($("graderName") && $("graderName").value.trim()) || "กรรมการ";
+      const btn = $("manSubmitBtn");
+      btn.disabled = true;
+      note.className = "note";
+      const uploaded = [];
+      const errors = [];
+      try {
+        for (const n of [1, 2, 3]) {
+          const input = $("manFile" + n);
+          const files = Array.prototype.slice.call((input && input.files) || []);
+          for (const file of files) {
+            note.textContent = "กำลังอัปโหลด " + file.name + " (วิชาที่ " + n + ") ...";
+            try {
+              const rec = await uploadFileToServer(file, {
+                adminKey: key, studentId: sid, fullName: name, subject: n,
+                bankId: $("manBank" + n) ? $("manBank" + n).value : "",
+                uploadedBy: grader, role: "committee", note: createRow ? "เขียนด้วยมือ" : "อัปโหลดเพิ่มโดยกรรมการ"
+              });
+              uploaded.push("[S" + n + "] " + rec.name + (rec.url ? " " + rec.url : ""));
+            } catch (err) {
+              errors.push(file.name + ": " + String(err && err.message ? err.message : err));
+            }
+          }
+        }
+        let rowMsg = "";
+        if (createRow) {
+          note.textContent = "กำลังเพิ่มแถวคำตอบในชีต...";
+          const now = fmtNow();
+          const qs = [1, 2, 3].map(function (n) { return "S" + n + "=" + ($("manBank" + n) ? $("manBank" + n).value : ""); }).join("; ");
+          const data = await postApps({
+            action: "manualSubmit",
+            adminKey: key,
+            fullName: name,
+            studentId: sid,
+            cohort: ($("manCohort").value || "").trim(),
+            level: $("manLevel").value,
+            language: "th",
+            examDate: $("manDate").value,
+            startTime: "",
+            question1: $("manText1") ? $("manText1").value : "",
+            question2: $("manText2") ? $("manText2").value : "",
+            question3: $("manText3") ? $("manText3").value : "",
+            lastAutosave: "",
+            submitStatus: "ส่งกระดาษ (บันทึกโดย " + grader + ")",
+            submitTime: now,
+            violationCount: "",
+            violationLog: "",
+            pasteAttempts: "",
+            sessionId: "MANUAL-" + Date.now().toString(36).toUpperCase(),
+            device: "manual",
+            screen: "",
+            questionSet: qs,
+            attachments: uploaded.join("\n"),
+            submissionMode: "เขียนด้วยมือ"
+          });
+          if (!data || !data.ok) throw new Error((data && data.error) || "เพิ่มแถวไม่สำเร็จ");
+          rowMsg = " เพิ่มแถวที่ " + data.row + " ในชีตแล้ว";
+        }
+        note.className = errors.length ? "err" : "ok";
+        note.textContent = "อัปโหลด " + uploaded.length + " ไฟล์" + rowMsg + (errors.length ? " · ผิดพลาด: " + errors.join("; ") : "");
+        [1, 2, 3].forEach(function (n) {
+          if ($("manFile" + n)) $("manFile" + n).value = "";
+          if ($("manText" + n)) $("manText" + n).value = "";
+        });
+        await connectCentral();
+        $("gradeSid").value = sid;
+        $("gradeFullName").value = name;
+        const list = submissionsForStudent(sid);
+        selectedSubmission = list.length ? list[list.length - 1] : null;
+        renderAnswerPane();
+      } catch (err) {
+        note.className = "err";
+        note.textContent = "ไม่สำเร็จ: " + String(err && err.message ? err.message : err);
+      } finally {
+        btn.disabled = false;
+      }
     }
 
     function renderSubmissionPick() {
@@ -3499,6 +4489,11 @@
         if (data && data.ok && Array.isArray(data.submissions)) {
           centralMode = true;
           centralSubmissions = data.submissions.map(normalizeSubmission);
+          centralFiles = Array.isArray(data.files) ? data.files : [];
+          if (data.grader && data.grader.role === "grader" && $("graderName")) {
+            $("graderName").value = data.grader.name;
+            $("graderName").readOnly = true;
+          }
           if (note) note.textContent = "เชื่อมต่อได้แล้ว พบคำตอบ " + data.submissions.length + " รายการ จะดึงคำตอบมาไว้ข้างรูบริก และบันทึกคะแนนลงแท็บคะแนนเมื่อกดบันทึก";
           if (mode) mode.textContent = "โหมดส่วนกลางพร้อมใช้ (Apps Script รุ่นที่ 2) — คะแนนจะถูกบันทึกทั้งในเครื่องนี้และลงชีต";
           renderSubmissionPick();
@@ -3565,6 +4560,77 @@
       getScores: function () { return Object.assign({}, gradeScores); }
     };
 
+    async function fetchPublishedConfig(adminKey) {
+      if (!isAppsScriptConfigured()) return null;
+      try {
+        const data = await postApps({ action: "getConfig", adminKey: adminKey || "" });
+        if (data && data.ok && data.config) return data;
+      } catch (err) {}
+      return null;
+    }
+
+    async function loadPublishedConfigOnStart() {
+      if (isAdminRoute()) return;
+      const data = await fetchPublishedConfig();
+      if (data && !data.config && Array.isArray(data.graderNames)) {
+        config.graderNames = data.graderNames;
+        renderGraderNames();
+      }
+      if (!data) return;
+      try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(data.config)); } catch (err) {}
+      config = mergeConfig(data.config);
+      if (Array.isArray(data.graderNames)) config.graderNames = data.graderNames;
+      applyTheme();
+      applyLogos();
+      renderGraderNames();
+      if (!isStaffRoute()) renderStudent();
+    }
+
+    async function publishConfig() {
+      const note = $("adminSaveNote");
+      const key = ($("publishKey") && $("publishKey").value.trim()) || getCommitteeKey();
+      if (!key) {
+        if (note) note.textContent = "กรุณากรอกรหัส ADMIN_KEY ก่อนเผยแพร่";
+        return;
+      }
+      if (!isAppsScriptConfigured()) {
+        if (note) note.textContent = "ยังไม่ได้ตั้งค่า URL ของ Apps Script";
+        return;
+      }
+      saveConfig();
+      if (note) note.textContent = "กำลังเผยแพร่...";
+      try {
+        const data = await postApps({ action: "saveConfig", adminKey: key, config: JSON.stringify(publicConfig()), graders: config.graders || [], updatedBy: "admin" });
+        if (data && data.ok) {
+          try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(publicConfig())); } catch (err) {}
+          if (note) note.textContent = "เผยแพร่แล้ว " + (data.updatedAt || fmtNow()) + " · โจทย์: " + questionSetLabel() + " · นิสิตที่เปิดหน้าสอบใหม่จะได้ค่านี้";
+        } else {
+          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + ((data && data.error) || "ไม่ทราบสาเหตุ");
+        }
+      } catch (err) {
+        if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + String(err && err.message ? err.message : err);
+      }
+    }
+
+    async function pullPublishedConfig() {
+      const note = $("adminSaveNote");
+      if (note) note.textContent = "กำลังโหลดค่าที่เผยแพร่อยู่...";
+      const key = ($("publishKey") && $("publishKey").value.trim()) || getCommitteeKey();
+      const data = await fetchPublishedConfig(key);
+      if (!data) {
+        if (note) note.textContent = "ยังไม่มีการตั้งค่าที่เผยแพร่ หรือเชื่อมต่อเซิร์ฟเวอร์ไม่ได้";
+        return;
+      }
+      const keepGraders = config.graders;
+      config = mergeConfig(data.config);
+      config.graders = Array.isArray(data.graders) ? data.graders : keepGraders;
+      saveConfig();
+      applyTheme();
+      applyLogos();
+      renderAdmin();
+      if (note) note.textContent = "โหลดค่าที่เผยแพร่เมื่อ " + (data.updatedAt || "-") + " แล้ว";
+    }
+
     function init() {
       applyTheme();
       applyLogos();
@@ -3595,6 +4661,34 @@
         if ($("entryErr")) $("entryErr").textContent = "";
       });
       $("enterExamBtn").addEventListener("click", enterExamRoom);
+      if ($("rosterPick")) $("rosterPick").addEventListener("change", () => {
+        onRosterPick("rosterPick", "sid", "fullName");
+        validateSid(false);
+        if ($("entryErr")) $("entryErr").textContent = "";
+      });
+      if ($("manRosterPick")) $("manRosterPick").addEventListener("change", () => { onRosterPick("manRosterPick", "manSid", "manName"); });
+      if ($("rosterText")) $("rosterText").addEventListener("input", () => {
+        config.roster = parseRosterText($("rosterText").value);
+        $("rosterNote").textContent = "อ่านได้ " + config.roster.length + " คน";
+      });
+      if ($("gradersText")) $("gradersText").addEventListener("input", () => {
+        config.graders = parseGradersText($("gradersText").value);
+        config.graderNames = config.graders.map(function (g) { return g.name; });
+        $("gradersNote").textContent = "อ่านได้ " + config.graders.length + " ท่าน";
+      });
+      renderGraderNames();
+      if ($("guideAck")) $("guideAck").addEventListener("change", () => { if ($("entryErr")) $("entryErr").textContent = ""; });
+      if ($("attachInput")) $("attachInput").addEventListener("change", handleAttachInput);
+      if ($("openSheetLink")) $("openSheetLink").href = SHEET_URL;
+      if ($("guideTh")) $("guideTh").addEventListener("input", () => { config.guide.th = $("guideTh").value; });
+      if ($("guideEn")) $("guideEn").addEventListener("input", () => { config.guide.en = $("guideEn").value; });
+      if ($("guideResetBtn")) $("guideResetBtn").addEventListener("click", () => { config.guide = defaultGuide(); renderAdmin(); });
+      if ($("publishBtn")) $("publishBtn").addEventListener("click", () => { publishConfig(); });
+      if ($("pullConfigBtn")) $("pullConfigBtn").addEventListener("click", () => { pullPublishedConfig(); });
+      if ($("gradeRefreshBtn")) $("gradeRefreshBtn").addEventListener("click", () => { refreshCentral(); });
+      if ($("manSubmitBtn")) $("manSubmitBtn").addEventListener("click", () => { submitManual(); });
+      if ($("manSid")) $("manSid").addEventListener("input", () => { $("manSid").value = $("manSid").value.replace(/\D/g, "").slice(0, 10); });
+      if ($("manDate")) $("manDate").value = (config.questions[0] && config.questions[0].date) || "";
 
       const answer = $("answer");
       bindClipboardGuards(answer);
@@ -3738,7 +4832,7 @@
       $("resetLogos").addEventListener("click", () => { config.logos = { mcu: null, prog: null }; applyLogos(); });
       $("saveAdmin").addEventListener("click", () => {
         saveConfig();
-        $("adminSaveNote").textContent = "บันทึกในเครื่องนี้แล้ว " + fmtNow();
+        $("adminSaveNote").textContent = "บันทึกในเครื่องนี้แล้ว " + fmtNow() + " (ยังไม่เผยแพร่ให้นิสิต กด \"เผยแพร่\" เพื่อส่งไปเซิร์ฟเวอร์)";
         applyTheme();
         applyLogos();
       });
@@ -3753,6 +4847,7 @@
 
       window.addEventListener("hashchange", showRoute);
       showRoute();
+      loadPublishedConfigOnStart();
 
       setInterval(() => {
         if (state.submitted || isStaffRoute() || !state.entered) return;
