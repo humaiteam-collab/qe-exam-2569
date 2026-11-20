@@ -168,6 +168,8 @@ function grade_(body, who) {
     if (who.role !== "admin" && old.graderName.indexOf(who.name) !== 0) {
       throw new Error("แก้ได้เฉพาะคะแนนที่ท่านให้เอง (แอดมินแก้ได้ทุกรายการ)");
     }
+    // แก้เฉพาะช่องที่ส่งมา ช่องที่ไม่ได้ส่งมาคงค่าเดิมไว้
+    GRADE_COLUMNS.forEach(function (c) { if (body[c[1]] == null) data[c[1]] = old[c[1]]; });
     data.timestamp = old.timestamp;
     data.graderName = old.graderName;
     data.graderRole = old.graderRole;
