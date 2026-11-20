@@ -4,6 +4,7 @@
  *
  * รองรับ (ส่งเป็น POST body JSON, Content-Type text/plain):
  *   (ไม่มี action) / "submit"  นิสิตส่งคำตอบ → แท็บคำตอบ (ชีต1)
+ *   "draft"                    สำรองคำตอบระหว่างสอบอัตโนมัติ → แท็บ "ร่างคำตอบ" (1 แถวต่อการสอบ 1 ครั้ง)
  *   "getConfig"                โหลดการตั้งค่าที่แอดมินเผยแพร่ (โจทย์ที่เลือก เวลา แนวทาง)  — ไม่ต้องใช้รหัส
  *   "saveConfig"   [ADMIN_KEY] แอดมินเผยแพร่การตั้งค่า → แท็บ "ตั้งค่า"
  *   "upload"                   อัปโหลดไฟล์คำตอบ → Google Drive + แท็บ "ไฟล์แนบ"
@@ -22,13 +23,14 @@
  *   (ไม่บังคับ) UPLOAD_FOLDER_ID = รหัสโฟลเดอร์ Drive ที่จะเก็บไฟล์ ถ้าไม่ใส่ ระบบสร้างโฟลเดอร์ให้เอง
  */
 
-var VERSION = 3;
+var VERSION = 4;
 var TZ = "Asia/Bangkok";
 var MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 var SUBMIT_SHEET = "ชีต1";
 var GRADE_SHEET = "คะแนน";
 var FILE_SHEET = "ไฟล์แนบ";
 var CONFIG_SHEET = "ตั้งค่า";
+var DRAFT_SHEET = "ร่างคำตอบ";
 var UPLOAD_FOLDER_NAME = "QE-2569 ไฟล์แนบคำตอบ";
 var CONFIG_CHUNK = 40000;
 
@@ -57,6 +59,23 @@ var SUBMIT_COLUMNS = [
   ["Question Set (โจทย์ที่ใช้)", "questionSet"],
   ["Attachments (ไฟล์แนบ)", "attachments"],
   ["Submission Mode (รูปแบบการส่ง)", "submissionMode"]
+];
+
+// ร่างคำตอบระหว่างสอบ: อัปเดตแถวเดิมตามรหัสเซสชัน
+var DRAFT_COLUMNS = [
+  ["บันทึกล่าสุด (Last Saved)", "timestamp"],
+  ["Student ID (รหัสนักศึกษา)", "studentId"],
+  ["Full Name (ชื่อ-นามสกุล)", "fullName"],
+  ["Session ID (รหัสเซสชัน)", "sessionId"],
+  ["Status (สถานะ)", "status"],
+  ["Current Subject (วิชาที่กำลังทำ)", "currentSubject"],
+  ["Question 1 (คำตอบข้อ 1)", "question1"],
+  ["Question 2 (คำตอบข้อ 2)", "question2"],
+  ["Question 3 (คำตอบข้อ 3)", "question3"],
+  ["Question Set (โจทย์ที่ใช้)", "questionSet"],
+  ["Attachments (ไฟล์แนบ)", "attachments"],
+  ["Violation Count (จำนวนครั้งที่ละเมิด)", "violationCount"],
+  ["Started (เริ่มสอบ)", "startedAt"]
 ];
 
 var GRADE_COLUMNS = [
@@ -120,6 +139,7 @@ function doPost(e) {
   try {
     switch (action) {
       case "submit": return json_(submit_(body, false));
+      case "draft": return json_(draft_(body));
       case "getConfig": return json_(getConfig_(body));
       case "saveConfig": requireAdmin_(body); return json_(saveConfig_(body));
       case "upload": return json_(upload_(body));
@@ -150,7 +170,42 @@ function submit_(body, manual) {
     data.submissionMode = "ออนไลน์";
   }
   var row = appendRow_(sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true), SUBMIT_COLUMNS, data);
+  if (!manual && data.sessionId) {
+    try {
+      var dsh = SpreadsheetApp.getActive().getSheetByName(DRAFT_SHEET);
+      var d = dsh ? findRow_(dsh, DRAFT_COLUMNS, "sessionId", data.sessionId) : null;
+      if (d) writeRow_(dsh, DRAFT_COLUMNS, d.row, { timestamp: data.timestamp, status: "ส่งแล้ว (แถวที่ " + row + ")" });
+    } catch (err) {}
+  }
   return { ok: true, row: row };
+}
+
+// สำรองคำตอบระหว่างสอบ: ไม่ต้องใช้รหัส (นิสิตส่งเอง) อัปเดตแถวเดิมของเซสชันเดียวกัน
+function draft_(body) {
+  var sid = String(body.studentId || "").trim();
+  if (!/^\d{10}$/.test(sid)) throw new Error("รหัสนักศึกษาต้องเป็นตัวเลข 10 หลัก");
+  var session = String(body.sessionId || "").trim();
+  if (!session) throw new Error("ไม่มีรหัสเซสชัน");
+  var data = {};
+  DRAFT_COLUMNS.forEach(function (c) { data[c[1]] = body[c[1]] == null ? "" : String(body[c[1]]); });
+  data.timestamp = now_();
+  data.studentId = sid;
+  if (!data.status) data.status = "กำลังสอบ";
+  var sh = sheet_(DRAFT_SHEET, DRAFT_COLUMNS, false);
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  var existing;
+  try {
+    existing = findRow_(sh, DRAFT_COLUMNS, "sessionId", session);
+  } finally {
+    lock.releaseLock();
+  }
+  if (existing) {
+    if (String(existing.data.status).indexOf("ส่งแล้ว") === 0) return { ok: true, row: existing.row, skipped: "submitted" };
+    writeRow_(sh, DRAFT_COLUMNS, existing.row, data);
+    return { ok: true, row: existing.row, updated: true, at: data.timestamp };
+  }
+  return { ok: true, row: appendRow_(sh, DRAFT_COLUMNS, data), updated: false, at: data.timestamp };
 }
 
 // บันทึกคะแนน: ถ้ามีรหัสการให้คะแนน (gradeId) เดิมอยู่แล้ว จะแก้แถวเดิม ไม่เพิ่มแถวซ้ำ
@@ -199,7 +254,8 @@ function list_(who) {
     uploadFolderUrl: uploadFolderUrl_(),
     submissions: readRows_(sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true), SUBMIT_COLUMNS),
     files: readRows_(sheet_(FILE_SHEET, FILE_COLUMNS, false), FILE_COLUMNS),
-    grades: readRows_(sheet_(GRADE_SHEET, GRADE_COLUMNS, false), GRADE_COLUMNS)
+    grades: readRows_(sheet_(GRADE_SHEET, GRADE_COLUMNS, false), GRADE_COLUMNS),
+    drafts: readRows_(sheet_(DRAFT_SHEET, DRAFT_COLUMNS, false), DRAFT_COLUMNS)
   };
 }
 
@@ -484,6 +540,7 @@ function setup() {
   sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true);
   sheet_(GRADE_SHEET, GRADE_COLUMNS, false);
   sheet_(FILE_SHEET, FILE_COLUMNS, false);
+  sheet_(DRAFT_SHEET, DRAFT_COLUMNS, false);
   var folder = uploadRoot_();
   Logger.log("พร้อมใช้งาน · โฟลเดอร์ไฟล์แนบ: " + folder.getUrl());
 }
