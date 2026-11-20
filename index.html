@@ -1099,7 +1099,10 @@
         </section>
 
         <section class="card admin-section">
-          <h2>รายชื่อที่ให้คะแนนแล้ว</h2>
+          <h2>คะแนนที่บันทึกในชีตแล้ว (ทุกกรรมการ)</h2>
+          <p class="note" id="sheetGradeNote">เชื่อมต่อด้วยรหัสผู้ตรวจหรือ ADMIN_KEY เพื่อดูคะแนนจากชีต · แอดมินแก้ไขได้ทุกรายการ ผู้ตรวจแก้ได้เฉพาะคะแนนของตนเอง</p>
+          <div id="sheetGradeList"></div>
+          <h2 style="margin-top:22px">รายการที่ให้คะแนนในเครื่องนี้</h2>
           <div id="gradeList"></div>
         </section>
 
@@ -3019,6 +3022,7 @@
       centralSubmissions = (data.submissions || []).map(normalizeSubmission);
       centralFiles = Array.isArray(data.files) ? data.files : [];
       centralFolderUrl = data.uploadFolderUrl || "";
+      captureCentralGrades(data);
       setTimeout(renderFileBox, 0);
       if ($("gradeAdminKey")) $("gradeAdminKey").value = key;
       const note = $("gradeConnectNote");
@@ -3129,6 +3133,10 @@
       centralSubmissions = [];
       centralFiles = [];
       centralFolderUrl = "";
+      centralGrades = [];
+      centralRole = "";
+      centralName = "";
+      editingSheetGrade = null;
       selectedSubmission = null;
       if ($("gradeAdminKey")) $("gradeAdminKey").value = "";
       if ($("committeeKey")) $("committeeKey").value = "";
@@ -3462,6 +3470,10 @@
     let selectedSubmission = null;
     let centralFiles = [];
     let centralFolderUrl = "";
+    let centralGrades = [];
+    let centralRole = "";
+    let centralName = "";
+    let editingSheetGrade = null;
 
     function rubricLang() {
       return state.lang === "en" ? "en" : "th";
@@ -3878,6 +3890,7 @@
 
     function blankGradeForm() {
       currentGradeId = "";
+      editingSheetGrade = null;
       gradeScores = {};
       gradeComments = {};
       selectedSubmission = null;
@@ -3955,6 +3968,118 @@
       document.body.appendChild(a);
       a.click();
       setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+
+    function captureCentralGrades(data) {
+      centralGrades = Array.isArray(data.grades) ? data.grades : [];
+      centralRole = (data.grader && data.grader.role) || "";
+      centralName = (data.grader && data.grader.name) || "";
+      setTimeout(renderSheetGrades, 0);
+    }
+
+    function parseJsonSafe(text, fallback) {
+      try { const v = JSON.parse(text); return v == null ? fallback : v; } catch (err) { return fallback; }
+    }
+
+    // Convert a row of the "คะแนน" sheet back into a grade record the rubric form can load.
+    function sheetRowToRecord(row) {
+      const label = String(row.subject || "");
+      const m = label.match(/(?:วิชาที่|Subject)\s*(\d)/);
+      return {
+        id: row.gradeId,
+        graderName: row.graderName,
+        graderRole: row.graderRole,
+        studentId: row.studentId,
+        fullName: row.fullName,
+        subject: m ? m[1] : "overall",
+        subjectLabel: label,
+        comments: row.comments,
+        oralPass: row.oralPass || "na",
+        ethicsOk: row.ethicsOk || "ok",
+        scores: parseJsonSafe(row.criterionScores, {}),
+        total: row.total,
+        verdictLabel: row.verdict
+      };
+    }
+
+    function canEditSheetGrade(row) {
+      if (centralRole === "admin") return true;
+      return centralRole === "grader" && !!centralName && String(row.graderName || "").indexOf(centralName) === 0;
+    }
+
+    function renderSheetGrades() {
+      const box = $("sheetGradeList");
+      if (!box) return;
+      const note = $("sheetGradeNote");
+      if (!centralMode) {
+        box.innerHTML = "";
+        return;
+      }
+      if (note) {
+        note.textContent = centralRole === "admin"
+          ? "เข้าระบบเป็นแอดมิน: แก้ไขคะแนนได้ทุกรายการ ระบบจะอัปเดตแถวเดิมในชีตและบันทึกประวัติการแก้ไข (ชื่อผู้ให้คะแนนเดิมคงไว้)"
+          : "เข้าระบบเป็น " + centralName + ": แก้ได้เฉพาะคะแนนที่ท่านให้ ส่วนรายการของท่านอื่นดูได้อย่างเดียว (แอดมินแก้ได้ทุกรายการ)";
+      }
+      const rows = centralGrades.filter(function (r) { return r.gradeId; }).slice().reverse();
+      if (!rows.length) {
+        box.innerHTML = "<p class='note'>ยังไม่มีคะแนนในชีต</p>";
+        return;
+      }
+      const table = document.createElement("table");
+      table.className = "file-box-table";
+      table.innerHTML = "<tr><th>นิสิต</th><th>วิชา</th><th>รวม</th><th>ผล</th><th>ผู้ให้คะแนน</th><th>บันทึก / แก้ไขล่าสุด</th><th></th></tr>";
+      rows.forEach(function (r) {
+        const tr = document.createElement("tr");
+        const edited = r.editedAt ? "<br><span class='meta'>แก้ " + escapeHtml(r.editedAt + " โดย " + r.editedBy) + "</span>" : "";
+        tr.innerHTML = "<td>" + escapeHtml((r.fullName || "") + " · " + (r.studentId || "")) + "</td><td>" + escapeHtml(r.subject || "") +
+          "</td><td>" + escapeHtml(r.total || "") + "</td><td>" + escapeHtml(r.verdict || "") + "</td><td>" + escapeHtml(r.graderName || "") +
+          "</td><td>" + escapeHtml(r.timestamp || "") + edited + "</td>";
+        const td = document.createElement("td");
+        td.className = "actions";
+        if (canEditSheetGrade(r)) {
+          const b = document.createElement("button");
+          b.type = "button";
+          b.className = "btn small";
+          b.textContent = "แก้ไขคะแนน";
+          b.addEventListener("click", function () { editSheetGrade(r); });
+          td.appendChild(b);
+        } else {
+          td.innerHTML = "<span class='meta'>ดูได้อย่างเดียว</span>";
+        }
+        if (r.editLog) {
+          const d = document.createElement("details");
+          d.innerHTML = "<summary class='meta'>ประวัติ</summary><pre class='answer-read' style='max-height:160px;font-size:0.8rem'>" + escapeHtml(r.editLog) + "</pre>";
+          td.appendChild(d);
+        }
+        tr.appendChild(td);
+        table.appendChild(tr);
+      });
+      box.innerHTML = "";
+      const sc = document.createElement("div");
+      sc.className = "table-scroll";
+      sc.appendChild(table);
+      box.appendChild(sc);
+    }
+
+    function editSheetGrade(row) {
+      const rec = sheetRowToRecord(row);
+      editingSheetGrade = row;
+      const subs = submissionsForStudent(rec.studentId);
+      selectedSubmission = subs.length ? subs[subs.length - 1] : null;
+      const myName = $("graderName") ? $("graderName").value : "";
+      applyGradeRecord(rec);
+      if ($("graderName")) {
+        // แอดมินแก้คะแนนของกรรมการท่านอื่น: แสดงชื่อเดิม และเซิร์ฟเวอร์จะคงชื่อเดิมไว้
+        if (centralRole === "grader") $("graderName").value = myName || rec.graderName;
+      }
+      updateGradeSummary();
+      const note = $("gradeSaveNote");
+      if (note) {
+        note.className = "note";
+        note.textContent = "กำลังแก้ไขคะแนนของ " + (rec.graderName || "-") + " สำหรับ " + (rec.fullName || "") + " (" + rec.subjectLabel + ") — แก้ช่องคะแนนแล้วกด \"บันทึกคะแนน\" เพื่ออัปเดตแถวเดิมในชีต";
+      }
+      const card = $("gradeSummaryCard") || $("rubricForm");
+      if ($("answerPaneCard")) $("answerPaneCard").scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     function renderGradeList() {
@@ -4750,6 +4875,7 @@
           centralSubmissions = data.submissions.map(normalizeSubmission);
           centralFiles = Array.isArray(data.files) ? data.files : [];
           centralFolderUrl = data.uploadFolderUrl || "";
+          captureCentralGrades(data);
           setTimeout(renderFileBox, 0);
           if (data.grader && data.grader.role === "grader" && $("graderName")) {
             $("graderName").value = data.grader.name;
@@ -4797,7 +4923,11 @@
       try {
         const data = await postApps(payloadFromGrade(rec));
         if (data && data.ok) {
-          if (note) note.textContent = "บันทึกในเครื่องนี้และลงแท็บคะแนนแถวที่ " + data.row + " แล้ว";
+          if (note) note.textContent = data.updated
+            ? "แก้ไขคะแนนในชีตแถวที่ " + data.row + " แล้ว (บันทึกประวัติการแก้ไขไว้)"
+            : "บันทึกในเครื่องนี้และลงแท็บคะแนนแถวที่ " + data.row + " แล้ว";
+          editingSheetGrade = null;
+          connectCentral();
         } else {
           if (note) note.textContent = "บันทึกในเครื่องนี้แล้ว แต่ส่งไปชีตไม่สำเร็จ: " + ((data && data.error) || "ไม่ทราบสาเหตุ") + " — ข้อมูลยังอยู่ในเครื่องนี้";
         }

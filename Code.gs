@@ -73,7 +73,10 @@ var GRADE_COLUMNS = [
   ["Comments (หมายเหตุ)", "comments"],
   ["Oral Pass (ผ่านปากเปล่า)", "oralPass"],
   ["Ethics OK (ไม่มีข้อบกพร่องจริยธรรม)", "ethicsOk"],
-  ["Grade ID (รหัสการให้คะแนน)", "gradeId"]
+  ["Grade ID (รหัสการให้คะแนน)", "gradeId"],
+  ["Last Edited (แก้ไขล่าสุด)", "editedAt"],
+  ["Edited By (ผู้แก้ไขล่าสุด)", "editedBy"],
+  ["Edit Log (ประวัติการแก้ไข)", "editLog"]
 ];
 
 var FILE_COLUMNS = [
@@ -150,14 +153,40 @@ function submit_(body, manual) {
   return { ok: true, row: row };
 }
 
+// บันทึกคะแนน: ถ้ามีรหัสการให้คะแนน (gradeId) เดิมอยู่แล้ว จะแก้แถวเดิม ไม่เพิ่มแถวซ้ำ
+// ผู้ตรวจแก้ได้เฉพาะคะแนนที่ตนให้ · แอดมิน (ADMIN_KEY) แก้ได้ทุกรายการ โดยคงชื่อผู้ให้คะแนนเดิมไว้
 function grade_(body, who) {
+  var sh = sheet_(GRADE_SHEET, GRADE_COLUMNS, false);
+  var gradeId = String(body.gradeId || "").trim();
+  var existing = gradeId ? findRow_(sh, GRADE_COLUMNS, "gradeId", gradeId) : null;
   var data = {};
   GRADE_COLUMNS.forEach(function (c) { data[c[1]] = body[c[1]] == null ? "" : String(body[c[1]]); });
+  var editor = who.role === "admin" ? "แอดมิน" : who.name + " (" + who.code + ")";
+
+  if (existing) {
+    var old = existing.data;
+    if (who.role !== "admin" && old.graderName.indexOf(who.name) !== 0) {
+      throw new Error("แก้ได้เฉพาะคะแนนที่ท่านให้เอง (แอดมินแก้ได้ทุกรายการ)");
+    }
+    data.timestamp = old.timestamp;
+    data.graderName = old.graderName;
+    data.graderRole = old.graderRole;
+    data.editedAt = now_();
+    data.editedBy = editor;
+    var line = data.editedAt + " " + editor + ": รวม " + old.total + " → " + data.total + ", ผล " + old.verdict + " → " + data.verdict;
+    data.editLog = (old.editLog ? old.editLog + "\n" : "") + line;
+    writeRow_(sh, GRADE_COLUMNS, existing.row, data);
+    return { ok: true, row: existing.row, updated: true };
+  }
+
   data.timestamp = now_();
-  // ผู้ตรวจที่เข้าด้วยรหัสของตน: ใช้ชื่อตามรหัส ป้องกันการให้คะแนนแทนผู้อื่น
-  if (who && who.role === "grader") data.graderName = who.name + " (" + who.code + ")";
-  var row = appendRow_(sheet_(GRADE_SHEET, GRADE_COLUMNS, false), GRADE_COLUMNS, data);
-  return { ok: true, row: row };
+  if (who.role === "grader") data.graderName = who.name + " (" + who.code + ")";
+  if (!data.gradeId) data.gradeId = "G-" + Utilities.getUuid();
+  data.editedAt = "";
+  data.editedBy = "";
+  data.editLog = "";
+  var row = appendRow_(sh, GRADE_COLUMNS, data);
+  return { ok: true, row: row, updated: false, gradeId: data.gradeId };
 }
 
 function list_(who) {
@@ -167,7 +196,8 @@ function list_(who) {
     grader: { role: who.role, name: who.name || "", code: who.code || "" },
     uploadFolderUrl: uploadFolderUrl_(),
     submissions: readRows_(sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true), SUBMIT_COLUMNS),
-    files: readRows_(sheet_(FILE_SHEET, FILE_COLUMNS, false), FILE_COLUMNS)
+    files: readRows_(sheet_(FILE_SHEET, FILE_COLUMNS, false), FILE_COLUMNS),
+    grades: readRows_(sheet_(GRADE_SHEET, GRADE_COLUMNS, false), GRADE_COLUMNS)
   };
 }
 
@@ -357,6 +387,40 @@ function appendRow_(sh, columns, data) {
     // เก็บเป็นข้อความทั้งแถว เพื่อไม่ให้รหัสนักศึกษาที่ขึ้นต้นด้วย 0 หรือวันที่ถูกแปลง
     sh.getRange(r, 1, 1, row.length).setNumberFormat("@").setValues([row]);
     return r;
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function findRow_(sh, columns, key, value) {
+  var last = sh.getLastRow();
+  if (last < 2) return null;
+  var h = headerIndex_(sh);
+  var vals = sh.getRange(2, 1, last - 1, h.head.length).getDisplayValues();
+  var col = null;
+  columns.forEach(function (c) { if (c[1] === key) col = h.idx[c[0]]; });
+  if (col == null) return null;
+  for (var i = vals.length - 1; i >= 0; i--) {
+    if (vals[i][col] === value) {
+      var o = {};
+      columns.forEach(function (c) { var j = h.idx[c[0]]; o[c[1]] = j == null ? "" : vals[i][j]; });
+      return { row: i + 2, data: o };
+    }
+  }
+  return null;
+}
+
+function writeRow_(sh, columns, r, data) {
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var h = headerIndex_(sh);
+    var row = sh.getRange(r, 1, 1, h.head.length).getValues()[0];
+    columns.forEach(function (c) {
+      var i = h.idx[c[0]];
+      if (i != null && data[c[1]] != null) row[i] = String(data[c[1]]).slice(0, 49000);
+    });
+    sh.getRange(r, 1, 1, row.length).setNumberFormat("@").setValues([row]);
   } finally {
     lock.releaseLock();
   }
