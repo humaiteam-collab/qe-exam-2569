@@ -412,6 +412,15 @@
     .grade-gate { max-width: 520px; margin: 24px auto; }
     #gradeRoot.committee-session #gradeKeySection { display: none; }
     .entry-actions { margin-top: 16px; }
+    .candidate-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
+    .candidate-row .candidate-bar { margin-top: 0; flex: 1 1 260px; }
+    .file-box-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .file-box-table th, .file-box-table td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .file-box-table th { background: var(--bg); font-weight: 600; white-space: nowrap; }
+    .file-box-table td.actions { white-space: nowrap; }
+    .file-box-table td.actions .btn { margin: 0 4px 4px 0; }
+    .file-box-table td:nth-child(1), .file-box-table td:nth-child(2), .file-box-table td:nth-child(4) { white-space: nowrap; }
+    .type-badge { white-space: nowrap; display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: var(--bg-subtle); }
     .candidate-bar {
       margin-top: 14px;
       padding: 12px 14px;
@@ -777,7 +786,10 @@
         <button type="button" class="btn primary" id="enterExamBtn">เข้าสู่ห้องสอบ</button>
         <p class="err" id="entryErr"></p>
       </div>
-      <div class="candidate-bar hidden" id="candidateBar"></div>
+      <div class="candidate-row hidden" id="candidateRow">
+        <div class="candidate-bar" id="candidateBar"></div>
+        <button type="button" class="btn" id="backHomeBtn">← กลับหน้าแรก</button>
+      </div>
     </section>
 
     <section class="card guide-card" id="guideCard">
@@ -909,7 +921,7 @@
       </section>
       <section class="card admin-section">
         <h2>ผู้ตรวจ / กรรมการ (รหัส + ชื่อ)</h2>
-        <p class="note">บรรทัดละ 1 ท่าน: รหัสผู้ตรวจ (เช่น 6901) แล้วเว้นวรรคหรือ Tab ตามด้วยชื่อ รหัสใช้เข้าสู่ระบบให้คะแนน ระบบจะเก็บรหัสไว้ฝั่งเซิร์ฟเวอร์เท่านั้น (หน้าสอบเห็นเฉพาะชื่อ) — กด "เผยแพร่" เพื่อบันทึก</p>
+        <p class="note">บรรทัดละ 1 ท่าน: รหัสผู้ตรวจ แล้วเว้นวรรคหรือ Tab ตามด้วยชื่อ รหัสเก็บไว้ที่ Apps Script เท่านั้น (หน้าเว็บสาธารณะไม่มีรหัส) — กด "โหลดค่าที่เผยแพร่อยู่" ก่อนเพื่อดึงรหัสปัจจุบันมาแก้ แล้วกด "เผยแพร่" เพื่อบันทึก ถ้ารายการใดไม่มีรหัส ระบบจะไม่เปลี่ยนรหัสบนเซิร์ฟเวอร์</p>
         <label class="field"><span>ผู้ตรวจ</span><textarea id="gradersText" rows="8" spellcheck="false"></textarea></label>
         <p class="note" id="gradersNote"></p>
       </section>
@@ -917,6 +929,11 @@
         <h2>วิชาสอบ: เลือกโจทย์จากคลังข้อสอบ (หมวดละ 1 ข้อ) และตั้งเวลา</h2>
         <p class="note">แต่ละวิชาผูกกับหมวดในเอกสารข้อสอบ QE 2569 เลือกโจทย์ 1 ข้อแล้วข้อความโจทย์จะถูกใส่ให้อัตโนมัติ (ยังแก้ไขเพิ่มได้)</p>
         <div id="questionFields"></div>
+      </section>
+      <section class="card admin-section" id="deviceResetSection">
+        <h2>รีเซ็ตการสอบในเครื่องนี้ (เฉพาะแอดมิน)</h2>
+        <p class="note">ใช้เมื่อนิสิตเริ่มสอบแล้วแต่ต้องแก้ข้อมูลหรือเริ่มใหม่ ให้เปิดหน้า #admin บนเครื่องที่นิสิตใช้สอบ แล้วกดรีเซ็ตรายการของนิสิตคนนั้น คำตอบที่ยังไม่ส่งในเครื่องนี้จะถูกลบ (ข้อมูลที่ส่งเข้าชีตแล้วให้แก้ใน Google Sheet)</p>
+        <div id="deviceProgressList"></div>
       </section>
       <section class="card admin-section" id="publishSection">
         <h2>บันทึกและเผยแพร่ให้นิสิตทุกเครื่อง</h2>
@@ -1039,6 +1056,27 @@
           </div>
         </div>
 
+        <section class="card admin-section" id="fileBoxSection">
+          <h2>กล่องไฟล์คำตอบของนิสิต</h2>
+          <p class="note">ไฟล์ทุกไฟล์ที่นิสิตหรือกรรมการอัปโหลด (PDF รูปภาพ Word) เปิดดูหรือดาวน์โหลดได้จากที่นี่ ต้องเชื่อมต่อด้วยรหัสผู้ตรวจก่อน</p>
+          <div class="grid-fields">
+            <label class="field"><span>ค้นหา (รหัส / ชื่อ / ชื่อไฟล์)</span><input id="fbSearch" autocomplete="off" /></label>
+            <label class="field"><span>วิชา</span>
+              <select id="fbSubject"><option value="">ทุกวิชา</option><option value="1">วิชาที่ 1</option><option value="2">วิชาที่ 2</option><option value="3">วิชาที่ 3</option></select>
+            </label>
+            <label class="field"><span>ชนิดไฟล์</span>
+              <select id="fbType"><option value="">ทุกชนิด</option><option value="pdf">PDF</option><option value="image">รูปภาพ</option><option value="word">Word</option><option value="other">อื่น ๆ</option></select>
+            </label>
+          </div>
+          <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <button type="button" class="btn" id="fbRefreshBtn">ดึงรายการไฟล์ล่าสุด</button>
+            <a class="btn sheet-link hidden" id="fbFolderLink" target="_blank" rel="noopener">เปิดโฟลเดอร์ใน Google Drive ↗</a>
+            <span class="note" id="fbCount"></span>
+          </div>
+          <div class="table-scroll" style="margin-top:10px"><table class="file-box-table" id="fbTable"></table></div>
+          <div id="fbViewer"></div>
+        </section>
+
         <section class="card admin-section" id="manualSection">
           <h2>นำเข้าคำตอบแบบเขียนด้วยมือ / อัปโหลดไฟล์แทนนิสิต</h2>
           <p class="note">สำหรับนิสิตที่เขียนตอบในกระดาษ ให้สแกนหรือถ่ายรูปแล้วอัปโหลดตามวิชา ระบบจะเพิ่มแถวในชีต (รูปแบบการส่ง = เขียนด้วยมือ) และเก็บไฟล์ใน Google Drive ใช้กับนิสิตที่ส่งออนไลน์แล้วได้ด้วย (เพิ่มไฟล์อย่างเดียว ไม่ต้องติ๊กสร้างแถว) ต้องเชื่อมต่อด้วย ADMIN_KEY ก่อน</p>
@@ -1089,6 +1127,7 @@
         <p id="gradeAppSub">สำหรับกรรมการผู้ให้คะแนน · หลักสูตรบัณฑิตศึกษา สาขาวิชาพุทธจิตวิทยา มจร</p>
       </div>
       <div class="status">
+        <button type="button" class="btn" id="committeeHomeBtn">← หน้าหลัก</button>
         <button type="button" class="btn hidden" id="committeeLogoutBtn">ออกจากระบบ</button>
       </div>
       <div class="logo-slot logo-prog" id="gradeLogoProg"></div>
@@ -1219,12 +1258,19 @@
       { sid: "6801103050", name: "นายแพทย์อภิชัย สิรกุลจิรา" }
     ];
 
-    // ผู้ตรวจตั้งต้น (ชื่อที่ยืนยันได้จากเว็บไซต์คณะมนุษยศาสตร์ มจร — แอดมินเพิ่ม/แก้ได้)
+    // ผู้ตรวจ / กรรมการสอบ QE 2569 — เฉพาะชื่อ (รหัสเก็บไว้ที่ Apps Script เท่านั้น เพราะหน้าเว็บนี้เป็นสาธารณะ)
     const DEFAULT_GRADERS = [
-      { code: "6901", name: "พระมหาสุเทพ สุทฺธิญาโณ, ผศ.ดร." },
-      { code: "6902", name: "พระใบฎีกากิตติพงษ์ สีลสุทฺโธ, ผศ.ดร." },
-      { code: "6903", name: "พระครูสังฆรักษ์ เอกภัทร อภิฉนฺโท, ผศ.ดร." },
-      { code: "6904", name: "รศ.ดร.สุรพงษ์ คงสัตย์" }
+      { code: "", name: "รองศาสตราจารย์ ดร.สิริวัฒน์ ศรีเครือดง" },
+      { code: "", name: "ศาสตราจารย์ ดร.สมโภชน์ เอี่ยมสุภาษิต" },
+      { code: "", name: "รองศาสตราจารย์ ดร.เมธาวี อุดมธรรมานุภาพ" },
+      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.วิชชุดา ฐิติโชติรัตนา" },
+      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.มั่น เสือสูงเนิน" },
+      { code: "", name: "รองศาสตราจารย์ ดร.กมลาศ ภูวชนาธิพงศ์" },
+      { code: "", name: "รองศาสตราจารย์ ดร.พุทธชาติ แผนสมบุญ" },
+      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.สุวัฒสัน รักขันโท" },
+      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.กิตติพงษ์ เนียมรอด" },
+      { code: "", name: "อาจารย์ ดร.ธนศักดิ์ พรทัพพสาร" },
+      { code: "", name: "อาจารย์ ดร.พรทิพย์ เกศตระกูล" }
     ];
 
     function parseRosterText(text) {
@@ -1417,7 +1463,11 @@
       ["attachErr", "ข้อความอัปโหลดไม่สำเร็จ (ใส่ {error})"],
       ["attachTooBig", "ข้อความไฟล์ใหญ่เกิน (ใส่ {name} {mb})"],
       ["attachNeedServer", "ข้อความยังไม่เชื่อมเซิร์ฟเวอร์"],
-      ["attachRemove", "ปุ่มเอาไฟล์ออกจากรายการ"]
+      ["attachRemove", "ปุ่มเอาไฟล์ออกจากรายการ"],
+      ["backHome", "ปุ่มกลับหน้าแรก (ก่อนเริ่มสอบ)"],
+      ["leaveBlockedTitle", "หัวข้อเตือนเมื่อเริ่มสอบแล้วกลับหน้าแรกไม่ได้"],
+      ["leaveBlockedBody", "คำอธิบายเตือนเมื่อเริ่มสอบแล้ว"],
+      ["leaveBlockedOk", "ปุ่มรับทราบ"]
     ];
 
     function defaultI18n() {
@@ -1493,7 +1543,11 @@
           attachErr: "อัปโหลดไม่สำเร็จ: {error}",
           attachTooBig: "{name} ใหญ่เกิน {mb} MB",
           attachNeedServer: "ยังไม่ได้เชื่อมต่อเซิร์ฟเวอร์สอบ จึงอัปโหลดไฟล์ไม่ได้",
-          attachRemove: "เอาออกจากรายการ"
+          attachRemove: "เอาออกจากรายการ",
+          backHome: "← กลับหน้าแรก",
+          leaveBlockedTitle: "เริ่มสอบแล้ว ไม่สามารถแก้ไขได้",
+          leaveBlockedBody: "ท่านเริ่มทำข้อสอบแล้ว จึงไม่สามารถกลับไปหน้าแรกหรือแก้ไขข้อมูลผู้เข้าสอบได้ หากจำเป็นต้องแก้ไข โปรดแจ้งเจ้าหน้าที่/แอดมินประจำห้องสอบ",
+          leaveBlockedOk: "รับทราบ"
         },
         en: {
           appTitle: "QE Qualification Exam 2569",
@@ -1566,7 +1620,11 @@
           attachErr: "Upload failed: {error}",
           attachTooBig: "{name} is larger than {mb} MB",
           attachNeedServer: "The exam server is not connected, so files cannot be uploaded.",
-          attachRemove: "Remove from list"
+          attachRemove: "Remove from list",
+          backHome: "← Back to start page",
+          leaveBlockedTitle: "Exam already started — changes not allowed",
+          leaveBlockedBody: "You have already started the exam, so you cannot return to the start page or change your candidate details. If a correction is needed, please ask the exam-room administrator.",
+          leaveBlockedOk: "OK"
         }
       };
     }
@@ -1995,8 +2053,8 @@
       });
       const entry = $("entryActions");
       if (entry) entry.classList.toggle("hidden", show);
-      const bar = $("candidateBar");
-      if (bar) bar.classList.toggle("hidden", !show);
+      const row = $("candidateRow");
+      if (row) row.classList.toggle("hidden", !show);
       const fields = document.querySelector("#infoCard .grid-fields");
       if (fields) fields.classList.toggle("hidden", show);
       if ($("rosterField")) $("rosterField").classList.toggle("hidden", show);
@@ -2162,6 +2220,42 @@
       enterSubject(state.q + 1);
     }
 
+    function anySubjectStarted() {
+      return state.subjectStartedAt.some(function (v) { return v != null; });
+    }
+
+    function showInfoModal(title, body, okText) {
+      state.confirmAction = "info";
+      $("confirmTitle").textContent = title;
+      $("confirmBody").textContent = body;
+      $("confirmOk").textContent = okText;
+      $("confirmOk").classList.remove("danger");
+      $("confirmCancel").classList.add("hidden");
+      $("confirmOverlay").classList.add("show");
+    }
+
+    // Leave the exam room and go back to the start page. Allowed only before any subject is started.
+    function exitExamRoom() {
+      if (!state.entered) return;
+      const L = t();
+      if (anySubjectStarted() || state.submitted) {
+        showInfoModal(L.leaveBlockedTitle, L.leaveBlockedBody, L.leaveBlockedOk);
+        return;
+      }
+      clearProgress();
+      state.entered = false;
+      state.q = 0;
+      state.maxReached = 0;
+      state.answers = ["", "", ""];
+      state.attachments = [[], [], []];
+      state.lockedQ = [null, null, null];
+      state.subjectFinished = [false, false, false];
+      state.lastSave = "";
+      if ($("guideDetails")) $("guideDetails").open = true;
+      renderStudent();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
     function enterExamRoom() {
       if (state.entered) return;
       if (!validateSid(true) || !$("fullName").value.trim()) {
@@ -2234,6 +2328,7 @@
       }
       $("adminOpenBtn").textContent = L.adminBtn;
       $("enterExamBtn").textContent = L.enterExam;
+      if ($("backHomeBtn")) $("backHomeBtn").textContent = L.backHome;
       renderGuide();
       renderRosterPick();
       const bar = $("candidateBar");
@@ -2915,6 +3010,7 @@
       renderSubmissionPick();
       renderAnswerPane();
       renderManualSubjects();
+      renderFileBox();
       updateGradeSummary();
     }
 
@@ -2922,6 +3018,8 @@
       centralMode = true;
       centralSubmissions = (data.submissions || []).map(normalizeSubmission);
       centralFiles = Array.isArray(data.files) ? data.files : [];
+      centralFolderUrl = data.uploadFolderUrl || "";
+      setTimeout(renderFileBox, 0);
       if ($("gradeAdminKey")) $("gradeAdminKey").value = key;
       const note = $("gradeConnectNote");
       const mode = $("gradeModeNote");
@@ -3030,6 +3128,7 @@
       centralMode = false;
       centralSubmissions = [];
       centralFiles = [];
+      centralFolderUrl = "";
       selectedSubmission = null;
       if ($("gradeAdminKey")) $("gradeAdminKey").value = "";
       if ($("committeeKey")) $("committeeKey").value = "";
@@ -3118,6 +3217,7 @@
         wrap.appendChild(pair);
         fields.appendChild(wrap);
       });
+      renderDeviceProgress();
       if ($("rosterText")) {
         $("rosterText").value = (config.roster || []).map(function (r) { return r.sid + "\t" + r.name; }).join("\n");
         $("rosterNote").textContent = (config.roster || []).length + " คน";
@@ -3361,6 +3461,7 @@
     let gradeComments = {};
     let selectedSubmission = null;
     let centralFiles = [];
+    let centralFolderUrl = "";
 
     function rubricLang() {
       return state.lang === "en" ? "en" : "th";
@@ -3518,6 +3619,8 @@
         renderGradeList();
         renderAnswerPane();
         renderManualSubjects();
+      renderFileBox();
+        renderFileBox();
         updateGradeSummary();
       }
     }
@@ -4055,17 +4158,7 @@
       btn.disabled = true;
       btn.textContent = "กำลังโหลด...";
       try {
-        let entry = fileViewCache[f.fileId];
-        if (!entry) {
-          const data = await postApps({ action: "getFile", adminKey: getAdminKey(), fileId: f.fileId });
-          if (!data || !data.ok) throw new Error((data && data.error) || "โหลดไฟล์ไม่ได้");
-          const bin = atob(data.data);
-          const bytes = new Uint8Array(bin.length);
-          for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-          const blob = new Blob([bytes], { type: data.mimeType || f.mimeType || "application/octet-stream" });
-          entry = { url: URL.createObjectURL(blob), type: blob.type, name: data.name || f.fileName };
-          fileViewCache[f.fileId] = entry;
-        }
+        const entry = await fetchCentralFile(f);
         const type = entry.type || "";
         let inner;
         if (type.indexOf("image/") === 0) inner = "<img alt='' src='" + entry.url + "' />";
@@ -4095,6 +4188,172 @@
         selectedSubmission = list.length ? list[list.length - 1] : null;
       }
       renderAnswerPane();
+    }
+
+    function fileKind(f) {
+      const mt = String(f.mimeType || "").toLowerCase();
+      const nm = String(f.fileName || f.name || "").toLowerCase();
+      if (mt === "application/pdf" || /\.pdf$/.test(nm)) return "pdf";
+      if (mt.indexOf("image/") === 0 || /\.(jpe?g|png|heic|webp|gif)$/.test(nm)) return "image";
+      if (/word|msword/.test(mt) || /\.docx?$/.test(nm)) return "word";
+      return "other";
+    }
+
+    const FILE_KIND_LABEL = { pdf: "PDF", image: "รูปภาพ", word: "Word", other: "อื่น ๆ" };
+
+    async function fetchCentralFile(f) {
+      let entry = fileViewCache[f.fileId];
+      if (entry) return entry;
+      const data = await postApps({ action: "getFile", adminKey: getAdminKey(), fileId: f.fileId });
+      if (!data || !data.ok) throw new Error((data && data.error) || "โหลดไฟล์ไม่ได้");
+      const bin = atob(data.data);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: data.mimeType || f.mimeType || "application/octet-stream" });
+      entry = { url: URL.createObjectURL(blob), type: blob.type, name: data.name || f.fileName };
+      fileViewCache[f.fileId] = entry;
+      return entry;
+    }
+
+    async function downloadCentralFile(f, btn) {
+      const old = btn ? btn.textContent : "";
+      if (btn) { btn.disabled = true; btn.textContent = "กำลังโหลด..."; }
+      try {
+        const entry = await fetchCentralFile(f);
+        const a = document.createElement("a");
+        a.href = entry.url;
+        a.download = f.fileName || entry.name || "file";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } catch (err) {
+        alert(String(err && err.message ? err.message : err));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = old; }
+      }
+    }
+
+    function renderFileBox() {
+      const table = $("fbTable");
+      if (!table) return;
+      const q = (($("fbSearch") && $("fbSearch").value) || "").trim().toLowerCase();
+      const subj = ($("fbSubject") && $("fbSubject").value) || "";
+      const kind = ($("fbType") && $("fbType").value) || "";
+      const link = $("fbFolderLink");
+      if (link) {
+        link.classList.toggle("hidden", !centralFolderUrl);
+        if (centralFolderUrl) link.href = centralFolderUrl;
+      }
+      const all = (centralFiles || []).slice().reverse();
+      const list = all.filter(function (f) {
+        if (subj && String(f.subject) !== subj) return false;
+        if (kind && fileKind(f) !== kind) return false;
+        if (q) {
+          const hay = [f.studentId, f.fullName, f.fileName, f.uploadedBy].join(" ").toLowerCase();
+          if (hay.indexOf(q) === -1) return false;
+        }
+        return true;
+      });
+      if ($("fbCount")) $("fbCount").textContent = centralMode ? ("แสดง " + list.length + " จาก " + all.length + " ไฟล์") : "ยังไม่ได้เชื่อมต่อ";
+      table.innerHTML = "";
+      if (!list.length) {
+        table.innerHTML = "<tr><td class='note'>" + (centralMode ? "ไม่พบไฟล์" : "เชื่อมต่อด้วยรหัสผู้ตรวจก่อน แล้วรายการไฟล์จะแสดงที่นี่") + "</td></tr>";
+        return;
+      }
+      table.innerHTML = "<tr><th>เวลาอัปโหลด</th><th>รหัส</th><th>ชื่อ-นามสกุล</th><th>วิชา</th><th>ไฟล์</th><th>ชนิด</th><th>ขนาด</th><th>ผู้อัปโหลด</th><th></th></tr>";
+      list.forEach(function (f) {
+        const tr = document.createElement("tr");
+        const k = fileKind(f);
+        const who = f.role === "student" ? "นิสิต" : (f.uploadedBy || f.role || "");
+        tr.innerHTML = "<td>" + escapeHtml(f.timestamp || "") + "</td><td>" + escapeHtml(f.studentId || "") + "</td><td>" + escapeHtml(f.fullName || "") +
+          "</td><td>" + escapeHtml(f.subject ? "วิชาที่ " + f.subject : "") + "</td><td>" + escapeHtml(f.fileName || "") +
+          "</td><td><span class='type-badge'>" + FILE_KIND_LABEL[k] + "</span></td><td>" + escapeHtml(fmtBytes(f.size)) + "</td><td>" + escapeHtml(who) + "</td>";
+        const td = document.createElement("td");
+        td.className = "actions";
+        if (k === "pdf" || k === "image") {
+          const view = document.createElement("button");
+          view.type = "button";
+          view.className = "btn small";
+          view.textContent = "เปิดดู";
+          view.addEventListener("click", function () {
+            const viewer = $("fbViewer");
+            viewer.dataset.open = "";
+            viewCentralFile(f, viewer, view).then(function () {
+              const head = document.createElement("p");
+              head.className = "note";
+              head.style.margin = "12px 0 0";
+              head.textContent = "กำลังแสดง: " + (f.fileName || "") + " · " + (f.fullName || "") + " (" + (f.studentId || "") + ")";
+              viewer.insertBefore(head, viewer.firstChild);
+              viewer.scrollIntoView({ behavior: "smooth", block: "start" });
+              view.textContent = "เปิดดู";
+            });
+          });
+          td.appendChild(view);
+        }
+        const dl = document.createElement("button");
+        dl.type = "button";
+        dl.className = "btn small";
+        dl.textContent = "ดาวน์โหลด";
+        dl.addEventListener("click", function () { downloadCentralFile(f, dl); });
+        td.appendChild(dl);
+        const pick = document.createElement("button");
+        pick.type = "button";
+        pick.className = "btn small";
+        pick.textContent = "ดูคำตอบ";
+        pick.title = "เปิดคำตอบของนิสิตคนนี้ในช่องให้คะแนน";
+        pick.addEventListener("click", function () {
+          $("gradeSid").value = f.studentId || "";
+          $("gradeFullName").value = f.fullName || "";
+          const subs = submissionsForStudent(f.studentId);
+          selectedSubmission = subs.length ? subs[subs.length - 1] : null;
+          renderAnswerPane();
+          if ($("answerPaneCard")) $("answerPaneCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        td.appendChild(pick);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      });
+    }
+
+    function renderDeviceProgress() {
+      const box = $("deviceProgressList");
+      if (!box) return;
+      const items = [];
+      try {
+        for (let i = 0; i < localStorage.length; i++) {
+          const k = localStorage.key(i);
+          if (!k || k.indexOf(PROGRESS_PREFIX) !== 0) continue;
+          try { items.push({ key: k, data: JSON.parse(localStorage.getItem(k) || "{}") }); } catch (e) {}
+        }
+      } catch (err) {}
+      if (!items.length) {
+        box.innerHTML = "<p class='note'>ไม่มีการสอบค้างอยู่ในเครื่องนี้</p>";
+        return;
+      }
+      box.innerHTML = "";
+      const ul = document.createElement("ul");
+      ul.className = "attach-list";
+      items.forEach(function (it) {
+        const d = it.data || {};
+        const started = (d.subjectStartedAt || []).filter(function (v) { return v != null; }).length;
+        const li = document.createElement("li");
+        li.innerHTML = "<span><strong>" + escapeHtml((d.fullName || "-") + " · " + (d.studentId || "-")) + "</strong> <span class='meta'>เริ่มแล้ว " + started + "/3 วิชา · บันทึกล่าสุด " + escapeHtml(d.lastSave || "-") + "</span></span>";
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "btn small danger";
+        btn.textContent = "รีเซ็ต (ลบการสอบที่ค้างในเครื่องนี้)";
+        btn.addEventListener("click", function () {
+          if (!confirm("ลบการสอบที่ค้างของ " + (d.fullName || d.studentId || "") + " ในเครื่องนี้? คำตอบที่ยังไม่ส่งจะหายไป")) return;
+          try {
+            localStorage.removeItem(it.key);
+            if (localStorage.getItem(PROGRESS_POINTER) === it.key) localStorage.removeItem(PROGRESS_POINTER);
+          } catch (err) {}
+          renderDeviceProgress();
+        });
+        li.appendChild(btn);
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
     }
 
     function renderManualSubjects() {
@@ -4490,6 +4749,8 @@
           centralMode = true;
           centralSubmissions = data.submissions.map(normalizeSubmission);
           centralFiles = Array.isArray(data.files) ? data.files : [];
+          centralFolderUrl = data.uploadFolderUrl || "";
+          setTimeout(renderFileBox, 0);
           if (data.grader && data.grader.role === "grader" && $("graderName")) {
             $("graderName").value = data.grader.name;
             $("graderName").readOnly = true;
@@ -4600,7 +4861,9 @@
       saveConfig();
       if (note) note.textContent = "กำลังเผยแพร่...";
       try {
-        const data = await postApps({ action: "saveConfig", adminKey: key, config: JSON.stringify(publicConfig()), graders: config.graders || [], updatedBy: "admin" });
+        const graders = config.graders || [];
+        const gradersComplete = graders.length > 0 && graders.every(function (g) { return g.code && g.name; });
+        const data = await postApps({ action: "saveConfig", adminKey: key, config: JSON.stringify(publicConfig()), graders: gradersComplete ? graders : undefined, updatedBy: "admin" });
         if (data && data.ok) {
           try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(publicConfig())); } catch (err) {}
           if (note) note.textContent = "เผยแพร่แล้ว " + (data.updatedAt || fmtNow()) + " · โจทย์: " + questionSetLabel() + " · นิสิตที่เปิดหน้าสอบใหม่จะได้ค่านี้";
@@ -4661,6 +4924,12 @@
         if ($("entryErr")) $("entryErr").textContent = "";
       });
       $("enterExamBtn").addEventListener("click", enterExamRoom);
+      if ($("backHomeBtn")) $("backHomeBtn").addEventListener("click", exitExamRoom);
+      if ($("committeeHomeBtn")) $("committeeHomeBtn").addEventListener("click", () => { location.hash = ""; });
+      ["fbSearch", "fbSubject", "fbType"].forEach(function (id) {
+        if ($(id)) $(id).addEventListener(id === "fbSearch" ? "input" : "change", renderFileBox);
+      });
+      if ($("fbRefreshBtn")) $("fbRefreshBtn").addEventListener("click", () => { refreshCentral(); });
       if ($("rosterPick")) $("rosterPick").addEventListener("change", () => {
         onRosterPick("rosterPick", "sid", "fullName");
         validateSid(false);
@@ -4705,16 +4974,19 @@
 
       $("submitBtn").addEventListener("click", openSubmitConfirm);
       $("confirmCancel").addEventListener("click", () => {
+        $("confirmCancel").classList.remove("hidden");
         $("confirmOverlay").classList.remove("show");
         $("confirmOk").classList.remove("danger");
         state.confirmAction = null;
       });
       $("confirmOk").addEventListener("click", () => {
-        if (state.submitted || state.sending) return;
+        if ((state.submitted || state.sending) && state.confirmAction !== "info") return;
         const action = state.confirmAction;
         $("confirmOverlay").classList.remove("show");
         $("confirmOk").classList.remove("danger");
         state.confirmAction = null;
+        $("confirmCancel").classList.remove("hidden");
+        if (action === "info") return;
         if (action === "next") finishCurrentAndNext();
         else if (action === "start") startCurrentSubject();
         else if (action === "clear") clearCurrentAnswer();
@@ -4722,6 +4994,7 @@
       });
       $("confirmOverlay").addEventListener("click", (e) => {
         if (e.target === $("confirmOverlay")) {
+          $("confirmCancel").classList.remove("hidden");
           $("confirmOverlay").classList.remove("show");
           $("confirmOk").classList.remove("danger");
           state.confirmAction = null;
