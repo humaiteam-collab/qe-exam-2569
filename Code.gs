@@ -263,7 +263,8 @@ function getFile_(body) {
 }
 
 function getConfig_(body) {
-  var out = { ok: true, config: null, graderNames: getGraders_().map(function (g) { return g.name; }) };
+  var graders = getGraders_();
+  var out = { ok: true, version: VERSION, graderCount: graders.length, config: null, graderNames: graders.map(function (g) { return g.name; }) };
   if (isAdmin_(body)) out.graders = getGraders_();
   var sh = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET);
   if (!sh || sh.getLastRow() < 2) return out;

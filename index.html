@@ -712,6 +712,23 @@
     .file-viewer img { min-height: 0; max-height: 80vh; }
     .sheet-link { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; }
     .tag-manual { display: inline-block; padding: 2px 8px; border-radius: 999px; background: var(--warn-bg); color: var(--warn-ink); font-size: 0.78rem; font-weight: 600; }
+    .staff-bar {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between;
+      margin: 0 0 18px; padding: 12px 16px; border-radius: var(--radius);
+      background: color-mix(in srgb, var(--accent) 16%, var(--paper));
+      border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+    }
+    .staff-bar-text { font-weight: 600; color: var(--warn-ink); }
+    .staff-btn { font-size: 1.02rem; padding: 10px 18px; }
+    .pw-wrap { position: relative; display: block; }
+    .pw-wrap input { width: 100%; padding-right: 48px; }
+    .pw-eye {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      border: 0; background: transparent; cursor: pointer; padding: 6px 8px; border-radius: 8px;
+      font-size: 1.15rem; line-height: 1; color: var(--muted);
+    }
+    .pw-eye:hover { background: var(--bg); }
+    .pw-eye:focus-visible { outline: 2px solid var(--primary); }
     .hidden { display: none !important; }
     @media (prefers-reduced-motion: reduce) {
       * { transition: none !important; animation: none !important; }
@@ -738,6 +755,11 @@
       </div>
       <div class="logo-slot logo-prog" id="logoProgSlot"></div>
     </header>
+
+    <div class="staff-bar" id="staffBar">
+      <span class="staff-bar-text">สำหรับคณะกรรมการ / Committee</span>
+      <button type="button" class="btn primary staff-btn" id="committeeOpenBtn">⚖️ กรรมการให้คะแนน — เข้าสู่ระบบ</button>
+    </div>
 
     <section class="card" id="infoCard">
       <h2 id="infoHeading">ข้อมูลผู้เข้าสอบ</h2>
@@ -849,7 +871,6 @@
     </section>
 
     <footer class="exam-footer">
-      <button type="button" class="committee-entry" id="committeeOpenBtn">กรรมการให้คะแนน / Committee grading</button>
       <button type="button" class="admin-entry" id="adminOpenBtn">แอดมิน</button>
     </footer>
   </div>
@@ -1130,6 +1151,8 @@
         <p id="gradeAppSub">สำหรับกรรมการผู้ให้คะแนน · หลักสูตรบัณฑิตศึกษา สาขาวิชาพุทธจิตวิทยา มจร</p>
       </div>
       <div class="status">
+        <span class="pill hidden" id="whoChip"><span id="whoName"></span> · รหัส <code id="whoCode">••••••••</code>
+          <button type="button" class="pw-eye" id="whoEye" style="position:static;transform:none;padding:2px 4px" title="แสดงรหัส" aria-label="แสดงรหัส">👁</button></span>
         <button type="button" class="btn" id="committeeHomeBtn">← หน้าหลัก</button>
         <button type="button" class="btn hidden" id="committeeLogoutBtn">ออกจากระบบ</button>
       </div>
@@ -2987,11 +3010,39 @@
     }
 
     function updateCommitteeEntry() {
-      const btn = $("committeeOpenBtn");
-      if (btn) btn.classList.toggle("hidden", !!state.entered);
+      const bar = $("staffBar");
+      if (bar) bar.classList.toggle("hidden", !!state.entered);
+    }
+
+    // Eye button on every password field: tap to show or hide what was typed.
+    function addPasswordEyes() {
+      document.querySelectorAll('input[type="password"]').forEach(function (input) {
+        if (input.dataset.eye) return;
+        input.dataset.eye = "1";
+        const wrap = document.createElement("span");
+        wrap.className = "pw-wrap";
+        input.parentNode.insertBefore(wrap, input);
+        wrap.appendChild(input);
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "pw-eye";
+        btn.textContent = "👁";
+        btn.title = "แสดงรหัส";
+        btn.setAttribute("aria-label", "แสดงรหัส");
+        btn.addEventListener("click", function () {
+          const show = input.type === "password";
+          input.type = show ? "text" : "password";
+          btn.textContent = show ? "🙈" : "👁";
+          btn.title = show ? "ซ่อนรหัส" : "แสดงรหัส";
+          btn.setAttribute("aria-label", btn.title);
+          input.focus();
+        });
+        wrap.appendChild(btn);
+      });
     }
 
     function showCommitteeGate() {
+      if ($("whoChip")) $("whoChip").classList.add("hidden");
       if ($("gradeGate")) $("gradeGate").classList.remove("hidden");
       if ($("gradeWorkspace")) $("gradeWorkspace").classList.add("hidden");
       if ($("committeeLogoutBtn")) $("committeeLogoutBtn").classList.add("hidden");
@@ -3000,7 +3051,41 @@
       mountGradeRoot($("adminGradeTab"));
     }
 
+    function renderWhoChip() {
+      const chip = $("whoChip");
+      if (!chip) return;
+      const key = getCommitteeKey();
+      chip.classList.toggle("hidden", !key);
+      if (!key) return;
+      let name = "";
+      try { name = sessionStorage.getItem(COMMITTEE_NAME_STORE) || ""; } catch (e) {}
+      $("whoName").textContent = name || "ผู้ตรวจ";
+      const shown = $("whoEye").dataset.shown === "1";
+      $("whoCode").textContent = shown ? key : "••••••••";
+      $("whoEye").textContent = shown ? "🙈" : "👁";
+    }
+
+    // Explain why a grader code was refused: old Apps Script, codes not set yet, or a short code.
+    async function diagnoseLogin(code, serverError) {
+      const hints = [serverError || "ไม่สามารถเข้าสู่ระบบได้"];
+      try {
+        const cfg = await postApps({ action: "getConfig" });
+        if (!cfg || !cfg.ok || cfg.version == null) {
+          hints.push("Apps Script ที่ใช้งานอยู่ยังเป็นรุ่นเก่า: ให้แอดมินวาง Code.gs ฉบับใหม่ แล้ว Deploy → Manage deployments → แก้ไข → New version");
+        } else if (!cfg.graderCount) {
+          hints.push("ยังไม่ได้ตั้งรหัสผู้ตรวจในระบบ: ให้แอดมินรันฟังก์ชัน setGraders ในไฟล์ตั้งรหัสผู้ตรวจ.gs หนึ่งครั้ง");
+        }
+      } catch (e) {
+        hints.push("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + String(e && e.message ? e.message : e));
+      }
+      if (/^\d{4}$/.test(String(code).trim())) {
+        hints.push("รหัสผู้ตรวจมีรูปแบบ 69xx-xxxx (เช่น 6901-1234) กรุณาพิมพ์ให้ครบทั้งสองส่วน");
+      }
+      return hints.join(" · ");
+    }
+
     function showCommitteeWorkspace() {
+      renderWhoChip();
       if ($("gradeGate")) $("gradeGate").classList.add("hidden");
       if ($("gradeWorkspace")) $("gradeWorkspace").classList.remove("hidden");
       if ($("committeeLogoutBtn")) $("committeeLogoutBtn").classList.remove("hidden");
@@ -3073,13 +3158,13 @@
           showCommitteeWorkspace();
           return true;
         }
-        const msg = (data && data.error) ? data.error : "ไม่สามารถเข้าสู่ระบบได้";
+        const msg = await diagnoseLogin(key, (data && data.error) ? data.error : "");
         if (err) err.textContent = msg;
         if (note) note.textContent = "";
         showCommitteeGate();
         return false;
       } catch (e) {
-        if (err) err.textContent = String(e && e.message ? e.message : e);
+        if (err) err.textContent = await diagnoseLogin(key, String(e && e.message ? e.message : e));
         if (note) note.textContent = "";
         showCommitteeGate();
         return false;
@@ -5035,6 +5120,7 @@
       if (restored) showRestoreNotice();
       renderStudent();
 
+      addPasswordEyes();
       $("btnTh").addEventListener("click", () => {
         state.lang = "th";
         renderStudent();
@@ -5056,6 +5142,10 @@
       $("enterExamBtn").addEventListener("click", enterExamRoom);
       if ($("backHomeBtn")) $("backHomeBtn").addEventListener("click", exitExamRoom);
       if ($("committeeHomeBtn")) $("committeeHomeBtn").addEventListener("click", () => { location.hash = ""; });
+      if ($("whoEye")) $("whoEye").addEventListener("click", () => {
+        $("whoEye").dataset.shown = $("whoEye").dataset.shown === "1" ? "" : "1";
+        renderWhoChip();
+      });
       ["fbSearch", "fbSubject", "fbType"].forEach(function (id) {
         if ($(id)) $(id).addEventListener(id === "fbSearch" ? "input" : "change", renderFileBox);
       });
