@@ -981,7 +981,7 @@
           <p class="note" id="gradeModeNote">ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script</p>
           <div class="grid-fields">
             <label class="field">
-              <span>รหัสผู้ตรวจ (เช่น 6901) หรือ ADMIN_KEY สำหรับโหมดส่วนกลาง</span>
+              <span>รหัสผู้ตรวจ (เช่น 6901-1234) หรือ ADMIN_KEY สำหรับโหมดส่วนกลาง</span>
               <input type="password" id="gradeAdminKey" autocomplete="off" />
             </label>
           </div>
@@ -1160,18 +1160,20 @@
     </header>
     <div id="gradeGate" class="card grade-gate">
       <h2>เข้าสู่ระบบกรรมการให้คะแนน</h2>
-      <p class="note">เลือกชื่อผู้ตรวจ แล้วกรอกรหัสผู้ตรวจของท่าน (เช่น 6901) ระบบจะตรวจสอบรหัสกับเซิร์ฟเวอร์ก่อนเปิดหน้าต่างให้คะแนน ผู้ดูแลระบบใช้ ADMIN_KEY ได้</p>
+      <p class="note">เลือกชื่อผู้ตรวจ แล้วกรอกรหัสผู้ตรวจของท่าน (เช่น 6901-1234) ระบบจะตรวจสอบรหัสกับเซิร์ฟเวอร์ก่อนเปิดหน้าต่างให้คะแนน ผู้ดูแลระบบใช้ ADMIN_KEY ได้</p>
       <div class="grid-fields">
         <label class="field">
           <span>ชื่อผู้ตรวจ</span>
-          <input id="committeeName" list="graderNameList" autocomplete="off" placeholder="เลือกหรือพิมพ์ชื่อ" />
+          <select id="committeeNamePick"></select>
+          <input id="committeeName" class="hidden" autocomplete="off" placeholder="พิมพ์ชื่อผู้ให้คะแนน" style="margin-top:8px" />
           <datalist id="graderNameList"></datalist>
         </label>
         <label class="field">
-          <span>รหัสผู้ตรวจ (เช่น 6901)</span>
+          <span>รหัสผู้ตรวจ (เช่น 6901-1234)</span>
           <input type="password" id="committeeKey" autocomplete="off" />
         </label>
       </div>
+      <p class="note" id="graderSetupWarn" style="color:var(--warn-ink)"></p>
       <p class="err" id="committeeKeyErr"></p>
       <p class="note" id="committeeLoginNote"></p>
       <div style="margin-top:14px">
@@ -1762,7 +1764,7 @@
         questions: normalizeQuestions(parsed.questions),
         guide: normalizeGuide(parsed.guide),
         roster: normalizeRoster(parsed.roster),
-        graderNames: Array.isArray(parsed.graderNames) ? parsed.graderNames.map(String) : base.graderNames,
+        graderNames: Array.isArray(parsed.graderNames) && parsed.graderNames.length ? parsed.graderNames.map(String) : base.graderNames,
         graders: Array.isArray(parsed.graders) ? parsed.graders : base.graders
       };
     }
@@ -1794,7 +1796,7 @@
           questions: normalizeQuestions(parsed.questions),
           guide: normalizeGuide(parsed.guide),
           roster: normalizeRoster(parsed.roster),
-          graderNames: Array.isArray(parsed.graderNames) ? parsed.graderNames.map(String) : base.graderNames,
+          graderNames: Array.isArray(parsed.graderNames) && parsed.graderNames.length ? parsed.graderNames.map(String) : base.graderNames,
           graders: Array.isArray(parsed.graders) ? parsed.graders : base.graders
         };
       } catch (e) {
@@ -2414,7 +2416,36 @@
       $(nameId).value = r.name;
     }
 
+    let serverGraderCount = null;
+
     function renderGraderNames() {
+      const pick = $("committeeNamePick");
+      if (pick) {
+        const cur = pick.value;
+        pick.innerHTML = "";
+        const head = document.createElement("option");
+        head.value = "";
+        head.textContent = "— เลือกชื่อผู้ตรวจ —";
+        pick.appendChild(head);
+        (config.graderNames || []).forEach(function (n) {
+          const o = document.createElement("option");
+          o.value = n;
+          o.textContent = n;
+          pick.appendChild(o);
+        });
+        const other = document.createElement("option");
+        other.value = "__other";
+        other.textContent = "— ไม่มีชื่อในรายการ / แอดมิน (พิมพ์ชื่อเอง) —";
+        pick.appendChild(other);
+        if (cur) pick.value = cur;
+        if ($("committeeName")) $("committeeName").classList.toggle("hidden", pick.value !== "__other");
+      }
+      const warn = $("graderSetupWarn");
+      if (warn) {
+        warn.textContent = serverGraderCount === 0
+          ? "⚠ ระบบยังไม่ได้ตั้งรหัสผู้ตรวจ: แอดมินต้องรันฟังก์ชัน setGraders ในไฟล์ \"ตั้งรหัสผู้ตรวจ\" ของ Apps Script หนึ่งครั้ง (ระหว่างนี้แอดมินเข้าด้วย ADMIN_KEY ได้)"
+          : "";
+      }
       const dl = $("graderNameList");
       if (!dl) return;
       dl.innerHTML = "";
@@ -5040,7 +5071,7 @@
       if (!isAppsScriptConfigured()) return null;
       try {
         const data = await postApps({ action: "getConfig", adminKey: adminKey || "" });
-        if (data && data.ok && data.config) return data;
+        if (data && data.ok) return data;
       } catch (err) {}
       return null;
     }
@@ -5048,14 +5079,14 @@
     async function loadPublishedConfigOnStart() {
       if (isAdminRoute()) return;
       const data = await fetchPublishedConfig();
-      if (data && !data.config && Array.isArray(data.graderNames)) {
-        config.graderNames = data.graderNames;
-        renderGraderNames();
-      }
-      if (!data) return;
+      if (data) serverGraderCount = data.graderCount;
+      if (data && !data.config && Array.isArray(data.graderNames) && data.graderNames.length) config.graderNames = data.graderNames;
+      renderGraderNames();
+      if (!data || !data.config) return;
       try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(data.config)); } catch (err) {}
       config = mergeConfig(data.config);
-      if (Array.isArray(data.graderNames)) config.graderNames = data.graderNames;
+      if (Array.isArray(data.graderNames) && data.graderNames.length) config.graderNames = data.graderNames;
+      serverGraderCount = data.graderCount;
       applyTheme();
       applyLogos();
       renderGraderNames();
@@ -5100,8 +5131,16 @@
         return;
       }
       const keepGraders = config.graders;
+      if (!data.config) {
+        if (Array.isArray(data.graders) && data.graders.length) {
+          config.graders = data.graders;
+          renderAdmin();
+        }
+        if (note) note.textContent = "ยังไม่เคยเผยแพร่การตั้งค่า" + (Array.isArray(data.graders) && data.graders.length ? " (โหลดรหัสผู้ตรวจ " + data.graders.length + " ท่านจากเซิร์ฟเวอร์แล้ว)" : "");
+        return;
+      }
       config = mergeConfig(data.config);
-      config.graders = Array.isArray(data.graders) ? data.graders : keepGraders;
+      config.graders = Array.isArray(data.graders) && data.graders.length ? data.graders : keepGraders;
       saveConfig();
       applyTheme();
       applyLogos();
@@ -5166,6 +5205,13 @@
         $("gradersNote").textContent = "อ่านได้ " + config.graders.length + " ท่าน";
       });
       renderGraderNames();
+      if ($("committeeNamePick")) $("committeeNamePick").addEventListener("change", () => {
+        const v = $("committeeNamePick").value;
+        $("committeeName").classList.toggle("hidden", v !== "__other");
+        $("committeeName").value = v === "__other" ? "" : v;
+        if (v === "__other") $("committeeName").focus();
+        else if ($("committeeKey")) $("committeeKey").focus();
+      });
       if ($("guideAck")) $("guideAck").addEventListener("change", () => { if ($("entryErr")) $("entryErr").textContent = ""; });
       if ($("attachInput")) $("attachInput").addEventListener("change", handleAttachInput);
       if ($("openSheetLink")) $("openSheetLink").href = SHEET_URL;
