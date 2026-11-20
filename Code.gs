@@ -373,6 +373,13 @@ function headerIndex_(sh) {
   return { head: head, idx: idx };
 }
 
+// ข้อความที่ขึ้นต้นด้วย = + - @ จะถูก Google Sheets ตีความเป็นสูตร (เช่นคำตอบที่ขึ้นต้นด้วย "- ข้อแรก")
+// ใส่ ' นำหน้าเพื่อเก็บเป็นข้อความ (เครื่องหมาย ' ไม่แสดงในเซลล์และไม่ติดมาตอนอ่านกลับ)
+function safeCell_(v) {
+  var s = v == null ? "" : String(v).slice(0, 49000);
+  return /^[=+\-@]/.test(s) ? "'" + s : s;
+}
+
 function appendRow_(sh, columns, data) {
   var lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -382,7 +389,7 @@ function appendRow_(sh, columns, data) {
     for (var i = 0; i < row.length; i++) row[i] = "";
     columns.forEach(function (c) {
       var i = h.idx[c[0]];
-      if (i != null) row[i] = data[c[1]] == null ? "" : String(data[c[1]]).slice(0, 49000);
+      if (i != null) row[i] = safeCell_(data[c[1]]);
     });
     var r = sh.getLastRow() + 1;
     // เก็บเป็นข้อความทั้งแถว เพื่อไม่ให้รหัสนักศึกษาที่ขึ้นต้นด้วย 0 หรือวันที่ถูกแปลง
@@ -419,7 +426,7 @@ function writeRow_(sh, columns, r, data) {
     var row = sh.getRange(r, 1, 1, h.head.length).getValues()[0];
     columns.forEach(function (c) {
       var i = h.idx[c[0]];
-      if (i != null && data[c[1]] != null) row[i] = String(data[c[1]]).slice(0, 49000);
+      if (i != null && data[c[1]] != null) row[i] = safeCell_(data[c[1]]);
     });
     sh.getRange(r, 1, 1, row.length).setNumberFormat("@").setValues([row]);
   } finally {

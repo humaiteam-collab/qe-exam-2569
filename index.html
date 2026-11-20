@@ -970,8 +970,10 @@
           <button type="button" class="btn" id="saveAdmin">บันทึกในเครื่องนี้</button>
           <button type="button" class="btn" id="pullConfigBtn">โหลดค่าที่เผยแพร่อยู่</button>
           <button type="button" class="btn" id="resetAll">รีเซ็ตเป็นค่าเริ่มต้น</button>
+          <button type="button" class="btn" id="serverCheckBtn">ตรวจสถานะเซิร์ฟเวอร์</button>
         </div>
         <p class="note" id="adminSaveNote"></p>
+        <div class="note" id="serverCheckNote" style="white-space:pre-wrap"></div>
       </section>
       </div>
       <div id="adminGradeTab" class="hidden">
@@ -1720,8 +1722,14 @@
           return merged;
         }
         const duration = Number(q.durationMin);
-        const cat = Number(q.cat) || bankById(q.bankId).cat;
+        const bank = bankById(q.bankId);
+        const cat = Number(q.cat) || bank.cat;
+        const c = CATEGORIES[cat] || CATEGORIES[bank.cat];
         return Object.assign({}, def, q, {
+          th: q.th && String(q.th).trim() ? q.th : bank.th,
+          en: q.en && String(q.en).trim() ? q.en : bank.en,
+          titleTh: q.titleTh && String(q.titleTh).trim() ? q.titleTh : c.titleTh,
+          titleEn: q.titleEn && String(q.titleEn).trim() ? q.titleEn : c.titleEn,
           cat: cat,
           durationMin: duration > 0 ? duration : def.durationMin,
           points: q.points != null && q.points !== "" ? Number(q.points) : CATEGORIES[cat].points
@@ -2257,6 +2265,7 @@
       $("confirmTitle").textContent = title;
       $("confirmBody").textContent = body;
       $("confirmOk").textContent = okText;
+      $("confirmOk").disabled = false;
       $("confirmOk").classList.remove("danger");
       $("confirmCancel").classList.add("hidden");
       $("confirmOverlay").classList.add("show");
@@ -2271,17 +2280,31 @@
         return;
       }
       clearProgress();
+      resetExamState();
+      renderStudent();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetExamState() {
+      if (state.saveTimer) { clearTimeout(state.saveTimer); state.saveTimer = null; }
       state.entered = false;
+      state.submitted = false;
       state.q = 0;
       state.maxReached = 0;
       state.answers = ["", "", ""];
       state.attachments = [[], [], []];
       state.lockedQ = [null, null, null];
+      state.subjectStartedAt = [null, null, null];
       state.subjectFinished = [false, false, false];
+      state.subjectOvertimeMin = [null, null, null];
+      state.overtimeWarned = [false, false, false];
+      state.pasteLog = [];
+      state.pasteAttempts = 0;
       state.lastSave = "";
+      state.sessionId = "QE-2569-S-" + Math.random().toString(36).slice(2, 8).toUpperCase();
       if ($("guideDetails")) $("guideDetails").open = true;
-      renderStudent();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if ($("result")) $("result").innerHTML = "";
+      if ($("submitBtn")) $("submitBtn").disabled = false;
     }
 
     function enterExamRoom() {
@@ -2643,7 +2666,7 @@
       if (started) growAnswer();
       const wc = wordCount(started ? state.answers[state.q] : "");
       $("countMeta").textContent = fmt(L.wordsChars, wc);
-      $("pasteMeta").textContent = fmt(L.pasteMeta, { n: state.pasteAttempts });
+      $("pasteMeta").textContent = fmt(L.pasteMeta, { n: pasteOnlyCount() });
       const isLast = state.q === total - 1;
       $("submitCard").classList.toggle("hidden", !isLast);
       $("submitWrap").classList.toggle("hidden", !isLast);
@@ -2752,11 +2775,16 @@
       el.classList.add("show");
     }
 
+    // Paste attempts only (paste, drop, Shift+Insert); right-click and copy/cut count as other violations.
+    function pasteOnlyCount() {
+      return state.pasteLog.filter(function (l) { return /(^|\s)(paste|drop|keydown-paste|shift-insert|insertFromPaste|insertFromDrop)/.test(l); }).length;
+    }
+
     function markPaste(reason) {
       state.pasteAttempts += 1;
       state.pasteLog.push(fmtNow() + " " + reason);
       renderPasteBanner();
-      $("pasteMeta").textContent = fmt(t().pasteMeta, { n: state.pasteAttempts });
+      $("pasteMeta").textContent = fmt(t().pasteMeta, { n: pasteOnlyCount() });
       scheduleSave();
     }
 
@@ -2864,7 +2892,7 @@
         submitTime: submitTime || "",
         violationCount: String(state.pasteAttempts),
         violationLog: logParts.join("; "),
-        pasteAttempts: String(state.pasteAttempts),
+        pasteAttempts: String(pasteOnlyCount()),
         sessionId: state.sessionId,
         device: deviceLabel(),
         screen: window.innerWidth + "×" + window.innerHeight,
@@ -5093,6 +5121,35 @@
       if (!isStaffRoute()) renderStudent();
     }
 
+    const OLD_SCRIPT_HELP = "เว็บแอป Apps Script ที่ Deploy อยู่ยังเป็นโค้ดรุ่นเก่า (โค้ดใหม่อยู่ในหน้าแก้ไขแล้ว แต่ยังไม่ได้ Deploy)\n" +
+      "วิธีแก้: Apps Script → Deploy → Manage deployments → กดดินสอ ✏️ → ช่อง Version เลือก \"New version\" → Deploy\n" +
+      "และตรวจว่าในโปรเจกต์ไม่มีไฟล์ .gs เก่าอีกไฟล์ที่มี function doPost ซ้ำ (ให้เหลือ Code.gs กับ ตั้งรหัสผู้ตรวจ เท่านั้น)";
+
+    async function checkServer() {
+      const out = $("serverCheckNote");
+      if (out) out.textContent = "กำลังตรวจ...";
+      const lines = [];
+      try {
+        const cfg = await postApps({ action: "getConfig" });
+        if (!cfg || !cfg.ok || cfg.version == null) {
+          lines.push("❌ " + OLD_SCRIPT_HELP);
+          if (cfg && cfg.error) lines.push("(เซิร์ฟเวอร์ตอบ: " + cfg.error + ")");
+        } else {
+          lines.push("✅ Apps Script รุ่น " + cfg.version + " ทำงานอยู่");
+          lines.push(cfg.graderCount ? "✅ ตั้งรหัสผู้ตรวจแล้ว " + cfg.graderCount + " ท่าน" : "⚠ ยังไม่ได้ตั้งรหัสผู้ตรวจ: รันฟังก์ชัน setGraders หนึ่งครั้ง");
+          lines.push(cfg.config ? "✅ มีการตั้งค่าที่เผยแพร่แล้ว เมื่อ " + (cfg.updatedAt || "-") : "ℹ ยังไม่เคยเผยแพร่การตั้งค่า");
+          const key = ($("publishKey") && $("publishKey").value.trim()) || "";
+          if (key) {
+            const who = await postApps({ action: "getConfig", adminKey: key });
+            lines.push(who && Array.isArray(who.graders) ? "✅ ADMIN_KEY ที่กรอกถูกต้อง" : "❌ ADMIN_KEY ที่กรอกไม่ตรงกับค่าใน Script properties ของ Apps Script");
+          }
+        }
+      } catch (err) {
+        lines.push("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + String(err && err.message ? err.message : err));
+      }
+      if (out) out.textContent = lines.join("\n");
+    }
+
     async function publishConfig() {
       const note = $("adminSaveNote");
       const key = ($("publishKey") && $("publishKey").value.trim()) || getCommitteeKey();
@@ -5114,7 +5171,9 @@
           try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(publicConfig())); } catch (err) {}
           if (note) note.textContent = "เผยแพร่แล้ว " + (data.updatedAt || fmtNow()) + " · โจทย์: " + questionSetLabel() + " · นิสิตที่เปิดหน้าสอบใหม่จะได้ค่านี้";
         } else {
-          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + ((data && data.error) || "ไม่ทราบสาเหตุ");
+          const e = (data && data.error) || "ไม่ทราบสาเหตุ";
+          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + e;
+          checkServer();
         }
       } catch (err) {
         if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + String(err && err.message ? err.message : err);
@@ -5219,6 +5278,7 @@
       if ($("guideEn")) $("guideEn").addEventListener("input", () => { config.guide.en = $("guideEn").value; });
       if ($("guideResetBtn")) $("guideResetBtn").addEventListener("click", () => { config.guide = defaultGuide(); renderAdmin(); });
       if ($("publishBtn")) $("publishBtn").addEventListener("click", () => { publishConfig(); });
+      if ($("serverCheckBtn")) $("serverCheckBtn").addEventListener("click", () => { checkServer(); });
       if ($("pullConfigBtn")) $("pullConfigBtn").addEventListener("click", () => { pullPublishedConfig(); });
       if ($("gradeRefreshBtn")) $("gradeRefreshBtn").addEventListener("click", () => { refreshCentral(); });
       if ($("manSubmitBtn")) $("manSubmitBtn").addEventListener("click", () => { submitManual(); });
@@ -5267,6 +5327,17 @@
         }
       });
 
+      // An admin reset in another tab removes this exam's saved progress: drop it here too,
+      // so this tab does not write it back on its next autosave.
+      window.addEventListener("storage", (e) => {
+        if (!state.entered || isStaffRoute()) return;
+        const key = progressKeyFor(currentStudentId(), state.sessionId);
+        if (e.key === key && e.newValue === null) {
+          resetExamState();
+          renderStudent();
+          showToast(state.lang === "en" ? "This exam was reset by the administrator." : "แอดมินรีเซ็ตการสอบในเครื่องนี้แล้ว");
+        }
+      });
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "hidden") persistProgress();
       });
