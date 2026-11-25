@@ -1055,6 +1055,11 @@
         <section class="card admin-section" id="statusSection">
           <h2>สถานะคำตอบรายนิสิต (ตามหมวด)</h2>
           <p class="note">รวมทุกครั้งที่ส่ง ทุกเครื่อง ร่างที่ยังไม่ได้กดส่ง และไฟล์แนบ แยกตามหมวดของโจทย์ · ✍️ = พิมพ์ในระบบ (จำนวนตัวอักษร) · 📎 = ไฟล์แนบ · ❌ = ยังไม่มีคำตอบ · กดที่ชื่อเพื่อเปิดคำตอบ</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px">
+            <button type="button" class="btn primary" id="buildSummaryBtn">อัปเดตแท็บ "สรุปตรวจ" ใน Google Sheet</button>
+            <a class="btn sheet-link" id="summarySheetLink" target="_blank" rel="noopener">เปิดชีต ↗</a>
+            <span class="note" id="buildSummaryNote"></span>
+          </div>
           <label class="guide-ack" style="margin:0 0 8px"><input type="checkbox" id="statusOnlyMissing" /> <span>แสดงเฉพาะนิสิตที่ยังไม่ครบ</span></label>
           <div class="table-scroll"><table class="file-box-table" id="statusTable"></table></div>
         </section>
@@ -5836,6 +5841,23 @@
       if ($("luSid")) $("luSid").addEventListener("input", () => { $("luSid").value = $("luSid").value.replace(/\D/g, "").slice(0, 10); });
       if ($("luSendBtn")) $("luSendBtn").addEventListener("click", () => { sendLateUpload(); });
       if ($("statusOnlyMissing")) $("statusOnlyMissing").addEventListener("change", renderStatusTable);
+      if ($("summarySheetLink")) $("summarySheetLink").href = SHEET_URL;
+      if ($("buildSummaryBtn")) $("buildSummaryBtn").addEventListener("click", async () => {
+        const note = $("buildSummaryNote");
+        const btn = $("buildSummaryBtn");
+        btn.disabled = true;
+        note.textContent = "กำลังสร้างแท็บสรุปตรวจ...";
+        try {
+          const res = await postApps({ action: "buildSummary", adminKey: getAdminKey() });
+          if (res && res.ok) note.textContent = "✅ อัปเดตแท็บ \"สรุปตรวจ\" แล้ว (" + res.students + " คน · " + res.updatedAt + ") แถวเดิมในชีตไม่ถูกแก้ไข";
+          else if (res && /ไม่รู้จัก action/.test(res.error || "")) note.textContent = "เซิร์ฟเวอร์ยังเป็นรุ่นเก่า: วาง Code.gs รุ่น 5 แล้ว Deploy → Manage deployments → New version";
+          else note.textContent = "ไม่สำเร็จ: " + ((res && res.error) || "");
+        } catch (err) {
+          note.textContent = "ไม่สำเร็จ: " + String(err && err.message ? err.message : err);
+        } finally {
+          btn.disabled = false;
+        }
+      });
       if ($("oldLinkBtn")) $("oldLinkBtn").addEventListener("click", () => { searchOldLinks(); });
       if ($("lateUploadToggle")) $("lateUploadToggle").addEventListener("change", () => { config.lateUploadOpen = $("lateUploadToggle").checked; });
       if ($("committeeHomeBtn")) $("committeeHomeBtn").addEventListener("click", () => { location.hash = ""; });
