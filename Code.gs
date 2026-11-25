@@ -220,7 +220,11 @@ function grade_(body, who) {
 
   if (existing) {
     var old = existing.data;
-    if (who.role !== "admin" && old.graderName.indexOf(who.name) !== 0) {
+    var mine = old.graderName.indexOf(who.name) === 0 ||
+      old.graderName.indexOf("(" + who.code + ")") !== -1 ||
+      old.graderName.indexOf("(" + who.code + "-") !== -1 ||   // รหัสรูปแบบเดิม เช่น (69xx-xxxx)
+      nameKey_(old.graderName) === nameKey_(who.name);         // คนเดียวกัน แต่เขียนคำนำหน้าต่างกัน
+    if (who.role !== "admin" && !mine) {
       throw new Error("แก้ได้เฉพาะคะแนนที่ท่านให้เอง (แอดมินแก้ได้ทุกรายการ)");
     }
     // แก้เฉพาะช่องที่ส่งมา ช่องที่ไม่ได้ส่งมาคงค่าเดิมไว้
@@ -250,7 +254,7 @@ function list_(who) {
   return {
     ok: true,
     version: VERSION,
-    grader: { role: who.role, name: who.name || "", code: who.code || "" },
+    grader: { role: who.role, name: who.name || "", code: who.code || "", cat: who.cat == null ? null : who.cat },
     uploadFolderUrl: uploadFolderUrl_(),
     submissions: readRows_(sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true), SUBMIT_COLUMNS),
     files: readRows_(sheet_(FILE_SHEET, FILE_COLUMNS, false), FILE_COLUMNS),
@@ -322,7 +326,11 @@ function getFile_(body) {
 
 function getConfig_(body) {
   var graders = getGraders_();
-  var out = { ok: true, version: VERSION, graderCount: graders.length, config: null, graderNames: graders.map(function (g) { return g.name; }) };
+  var out = {
+    ok: true, version: VERSION, graderCount: graders.length, config: null,
+    graderNames: graders.map(function (g) { return g.name; }),
+    graderGroups: graders.map(function (g) { return { name: g.name, cat: g.cat == null ? null : Number(g.cat) }; })
+  };
   if (isAdmin_(body)) out.graders = getGraders_();
   var sh = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET);
   if (!sh || sh.getLastRow() < 2) return out;
@@ -343,7 +351,11 @@ function saveConfig_(body) {
   var text = JSON.stringify(parsed);
   if (Array.isArray(body.graders)) {
     var clean = body.graders.filter(function (g) { return g && String(g.code || "").trim() && String(g.name || "").trim(); })
-      .map(function (g) { return { code: String(g.code).trim(), name: String(g.name).trim() }; });
+      .map(function (g) {
+        var o = { code: String(g.code).trim(), name: String(g.name).trim() };
+        if (g.cat != null && g.cat !== "") o.cat = Number(g.cat);
+        return o;
+      });
     if (clean.length) PropertiesService.getScriptProperties().setProperty("GRADERS", JSON.stringify(clean));
   }
   var lock = LockService.getScriptLock();
@@ -365,6 +377,14 @@ function saveConfig_(body) {
 }
 
 /* ---------- helpers ---------- */
+
+// ชื่อที่ใช้เทียบว่าเป็นคนเดียวกัน: ข้อความหลัง "ดร." คำแรก (ไม่สนคำนำหน้า เช่น รศ.ดร. / รองศาสตราจารย์ ดร.)
+function nameKey_(name) {
+  var s = String(name || "").replace(/\s*\(.*\)\s*$/, "");
+  var i = s.lastIndexOf("ดร.");
+  var rest = (i >= 0 ? s.slice(i + 3) : s).replace(/^\s+|\s+$/g, "");
+  return rest.split(/\s+/)[0] || rest;
+}
 
 function getGraders_() {
   var raw = PropertiesService.getScriptProperties().getProperty("GRADERS");
@@ -395,7 +415,7 @@ function requireKey_(body) {
   var code = String(body.adminKey || "").trim();
   if (code) {
     var g = getGraders_().filter(function (x) { return String(x.code) === code; })[0];
-    if (g) return { role: "grader", name: g.name, code: g.code };
+    if (g) return { role: "grader", name: g.name, code: g.code, cat: g.cat == null ? null : Number(g.cat) };
   }
   throw new Error("รหัสผู้ตรวจไม่ถูกต้อง");
 }
