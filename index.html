@@ -420,6 +420,8 @@
     .file-box-table td.actions { white-space: nowrap; }
     .file-box-table td.actions .btn { margin: 0 4px 4px 0; }
     .file-box-table td:nth-child(1), .file-box-table td:nth-child(2), .file-box-table td:nth-child(4) { white-space: nowrap; }
+    #statusTable td { white-space: normal !important; }
+    #statusTable td:first-child { min-width: 220px; }
     .type-badge { white-space: nowrap; display: inline-block; padding: 1px 8px; border-radius: 999px; font-size: 0.78rem; font-weight: 600; background: var(--bg-subtle); }
     .candidate-bar {
       margin-top: 14px;
@@ -814,6 +816,12 @@
       </div>
     </section>
 
+    <section class="card hidden" id="lateUploadCard" style="border:2px dashed var(--accent)">
+      <h2 style="margin:0 0 6px">ส่งไฟล์คำตอบที่เขียนในกระดาษ</h2>
+      <p class="note" style="margin:0 0 10px">สำหรับนิสิตที่สอบแบบเขียนด้วยมือ ให้ถ่ายรูปหรือสแกนกระดาษคำตอบ แล้วส่งที่นี่แยกตามหมวด</p>
+      <button type="button" class="btn primary" id="lateUploadOpenBtn">📎 ส่งไฟล์คำตอบ (กระดาษ)</button>
+    </section>
+
     <section class="card guide-card" id="guideCard">
       <details id="guideDetails" open>
         <summary><h2 id="guideHeading" style="display:inline">แนวทางการสอบ QE (สรุป)</h2></summary>
@@ -942,7 +950,7 @@
       </section>
       <section class="card admin-section">
         <h2>ผู้ตรวจ / กรรมการ (รหัส + ชื่อ)</h2>
-        <p class="note">บรรทัดละ 1 ท่าน: รหัสผู้ตรวจ แล้วเว้นวรรคหรือ Tab ตามด้วยชื่อ รหัสเก็บไว้ที่ Apps Script เท่านั้น (หน้าเว็บสาธารณะไม่มีรหัส) — กด "โหลดค่าที่เผยแพร่อยู่" ก่อนเพื่อดึงรหัสปัจจุบันมาแก้ แล้วกด "เผยแพร่" เพื่อบันทึก ถ้ารายการใดไม่มีรหัส ระบบจะไม่เปลี่ยนรหัสบนเซิร์ฟเวอร์</p>
+        <p class="note">บรรทัดละ 1 ท่าน: รหัสผู้ตรวจ ⇥ ชื่อ ⇥ หมวดที่ตรวจ (1 ทฤษฎีทางจิตวิทยา · 2 พุทธจิตวิทยาประยุกต์ · 3 วิธีวิทยาการวิจัย · 0 อื่น ๆ) รหัสเก็บไว้ที่ Apps Script เท่านั้น (หน้าเว็บสาธารณะไม่มีรหัส) — กด "โหลดค่าที่เผยแพร่อยู่" ก่อนเพื่อดึงรหัสปัจจุบันมาแก้ แล้วกด "เผยแพร่" เพื่อบันทึก ถ้ารายการใดไม่มีรหัส ระบบจะไม่เปลี่ยนรหัสบนเซิร์ฟเวอร์</p>
         <label class="field"><span>ผู้ตรวจ</span><textarea id="gradersText" rows="8" spellcheck="false"></textarea></label>
         <p class="note" id="gradersNote"></p>
       </section>
@@ -951,14 +959,25 @@
         <p class="note">แต่ละวิชาผูกกับหมวดในเอกสารข้อสอบ QE 2569 เลือกโจทย์ 1 ข้อแล้วข้อความโจทย์จะถูกใส่ให้อัตโนมัติ (ยังแก้ไขเพิ่มได้)</p>
         <div id="questionFields"></div>
       </section>
+      <section class="card admin-section" id="oldLinkSection">
+        <h2>ค้นหาคำตอบที่อาจส่งผ่านลิงก์ระบบเก่า</h2>
+        <p class="note">ระบบเก่า 2 ลิงก์ยังเปิดใช้งานอยู่ ถ้านิสิตเปิดสอบจากลิงก์เก่า (ลิงก์ script.google.com ที่เคยส่งก่อนวันที่ 20) คำตอบจะไม่อยู่ในชีต QE-2569 ใส่ ADMIN_KEY แล้วกดค้นหา ระบบจะแสดงเฉพาะคำตอบที่ยังไม่มีในชีตปัจจุบัน และนำเข้าได้ทีละรายการ (แถวที่นำเข้าจะมีป้าย "นำเข้าจากลิงก์เก่า")</p>
+        <div class="grid-fields">
+          <label class="field"><span>ADMIN_KEY</span><input type="password" id="oldLinkKey" autocomplete="off" /></label>
+        </div>
+        <div style="margin-top:10px"><button type="button" class="btn primary" id="oldLinkBtn">ค้นหาในลิงก์เก่า</button></div>
+        <div class="note" id="oldLinkNote" style="white-space:pre-wrap"></div>
+        <div class="table-scroll"><table class="file-box-table" id="oldLinkTable"></table></div>
+      </section>
       <section class="card admin-section" id="deviceResetSection">
-        <h2>รีเซ็ตการสอบในเครื่องนี้ (เฉพาะแอดมิน)</h2>
-        <p class="note">ใช้เมื่อนิสิตเริ่มสอบแล้วแต่ต้องแก้ข้อมูลหรือเริ่มใหม่ ให้เปิดหน้า #admin บนเครื่องที่นิสิตใช้สอบ แล้วกดรีเซ็ตรายการของนิสิตคนนั้น คำตอบที่ยังไม่ส่งในเครื่องนี้จะถูกลบ (ข้อมูลที่ส่งเข้าชีตแล้วให้แก้ใน Google Sheet)</p>
+        <h2>การสอบที่ค้างอยู่ในเครื่องนี้: กู้คืน / รีเซ็ต (เฉพาะแอดมิน)</h2>
+        <p class="note"><strong>กู้คืน:</strong> ถ้านิสิตทำข้อสอบในเครื่องนี้แต่ไม่ได้กดส่ง ให้เปิดหน้า #admin บนเครื่องนั้น (เบราว์เซอร์เดียวกับที่นิสิตใช้) แล้วกด "ส่งคำตอบนี้เข้าชีต" คำตอบจะเข้าแท็บคำตอบโดยระบุว่า "กู้คืนจากเครื่อง" และกรรมการเห็นรวมกับคำตอบอื่นของนิสิตคนนั้น<br><strong>รีเซ็ต:</strong> ใช้เมื่อนิสิตเริ่มสอบแล้วแต่ต้องแก้ข้อมูลหรือเริ่มใหม่ ให้เปิดหน้า #admin บนเครื่องที่นิสิตใช้สอบ แล้วกดรีเซ็ตรายการของนิสิตคนนั้น คำตอบที่ยังไม่ส่งในเครื่องนี้จะถูกลบ (ข้อมูลที่ส่งเข้าชีตแล้วให้แก้ใน Google Sheet)</p>
         <div id="deviceProgressList"></div>
       </section>
       <section class="card admin-section" id="publishSection">
         <h2>บันทึกและเผยแพร่ให้นิสิตทุกเครื่อง</h2>
         <p class="note">ปุ่ม "บันทึกในเครื่องนี้" เก็บไว้เฉพาะเบราว์เซอร์นี้ ส่วน "เผยแพร่" จะส่งการตั้งค่า (โจทย์ที่เลือก เวลา แนวทาง ข้อความ ธีม) ไปเก็บใน Google Sheet แท็บ "ตั้งค่า" นิสิตทุกเครื่องจะโหลดค่านี้เมื่อเปิดหน้าสอบ ต้องใช้รหัส ADMIN_KEY ของ Apps Script</p>
+        <label class="guide-ack" style="margin:0 0 10px"><input type="checkbox" id="lateUploadToggle" /> <span>เปิดหน้า "ส่งไฟล์คำตอบที่เขียนในกระดาษ" ให้นิสิต (ปิดแล้วกดเผยแพร่ เมื่อไม่ต้องการรับไฟล์แล้ว)</span></label>
         <div class="grid-fields">
           <label class="field">
             <span>รหัสผู้ดูแล (ADMIN_KEY)</span>
@@ -970,8 +989,10 @@
           <button type="button" class="btn" id="saveAdmin">บันทึกในเครื่องนี้</button>
           <button type="button" class="btn" id="pullConfigBtn">โหลดค่าที่เผยแพร่อยู่</button>
           <button type="button" class="btn" id="resetAll">รีเซ็ตเป็นค่าเริ่มต้น</button>
+          <button type="button" class="btn" id="serverCheckBtn">ตรวจสถานะเซิร์ฟเวอร์</button>
         </div>
         <p class="note" id="adminSaveNote"></p>
+        <div class="note" id="serverCheckNote" style="white-space:pre-wrap"></div>
       </section>
       </div>
       <div id="adminGradeTab" class="hidden">
@@ -981,7 +1002,7 @@
           <p class="note" id="gradeModeNote">ตอนนี้บันทึกคะแนนไว้ในเครื่องนี้เท่านั้น (localStorage) ไม่ต้องอัป Apps Script</p>
           <div class="grid-fields">
             <label class="field">
-              <span>รหัสผู้ตรวจ (เช่น 6901-1234) หรือ ADMIN_KEY สำหรับโหมดส่วนกลาง</span>
+              <span>รหัสผู้ตรวจ (เช่น 6901) หรือ ADMIN_KEY สำหรับโหมดส่วนกลาง</span>
               <input type="password" id="gradeAdminKey" autocomplete="off" />
             </label>
           </div>
@@ -1029,6 +1050,13 @@
               <select id="submissionPick"><option value="">— เลือกนิสิต —</option></select>
             </label>
           </div>
+        </section>
+
+        <section class="card admin-section" id="statusSection">
+          <h2>สถานะคำตอบรายนิสิต (ตามหมวด)</h2>
+          <p class="note">รวมทุกครั้งที่ส่ง ทุกเครื่อง ร่างที่ยังไม่ได้กดส่ง และไฟล์แนบ แยกตามหมวดของโจทย์ · ✍️ = พิมพ์ในระบบ (จำนวนตัวอักษร) · 📎 = ไฟล์แนบ · ❌ = ยังไม่มีคำตอบ · กดที่ชื่อเพื่อเปิดคำตอบ</p>
+          <label class="guide-ack" style="margin:0 0 8px"><input type="checkbox" id="statusOnlyMissing" /> <span>แสดงเฉพาะนิสิตที่ยังไม่ครบ</span></label>
+          <div class="table-scroll"><table class="file-box-table" id="statusTable"></table></div>
         </section>
 
         <div class="grade-layout">
@@ -1143,6 +1171,38 @@
     </div>
   </div>
 
+  <div class="app hidden" id="uploadApp">
+    <header class="topbar">
+      <div class="logo-slot logo-mcu" id="uploadLogoMcu"></div>
+      <div class="titles">
+        <h1>ส่งไฟล์คำตอบที่เขียนในกระดาษ</h1>
+        <p>สอบ QE คุณสมบัติ 2569 · หลักสูตรพุทธศาสตรดุษฎีบัณฑิต สาขาวิชาพุทธจิตวิทยา</p>
+      </div>
+      <div class="status"><button type="button" class="btn" id="uploadHomeBtn">← หน้าหลัก</button></div>
+      <div class="logo-slot logo-prog" id="uploadLogoProg"></div>
+    </header>
+    <section class="card" id="lateUploadForm">
+      <p class="note" style="margin-top:0">ถ่ายรูปหรือสแกนกระดาษคำตอบให้อ่านชัดทุกหน้า (PDF หรือรูปภาพ ไม่เกิน 10 MB ต่อไฟล์ ส่งได้หลายไฟล์) เลือกหมวดให้ตรงกับข้อที่ตอบ ส่งทีละหมวด ระบบบันทึกเวลาที่ส่งไว้ให้คณะกรรมการพิจารณา</p>
+      <label class="field" style="margin-bottom:12px"><span>ชื่อนิสิต</span><select id="luPick"></select></label>
+      <div class="grid-fields">
+        <label class="field"><span>รหัสนักศึกษา (10 หลัก)</span><input id="luSid" inputmode="numeric" maxlength="10" autocomplete="off" /></label>
+        <label class="field"><span>ชื่อ-นามสกุล</span><input id="luName" /></label>
+        <label class="field"><span>คำตอบของหมวด</span>
+          <select id="luCat">
+            <option value="">— เลือกหมวด —</option>
+            <option value="1">หมวดที่ 1 แนวคิดและทฤษฎีทางจิตวิทยา</option>
+            <option value="2">หมวดที่ 2 พุทธจิตวิทยาประยุกต์</option>
+            <option value="3">หมวดที่ 3 วิธีวิทยาการวิจัยและการสร้างองค์ความรู้</option>
+          </select>
+        </label>
+      </div>
+      <label class="field" style="margin-top:12px"><span>ไฟล์คำตอบ</span><input type="file" id="luFiles" multiple accept=".pdf,.jpg,.jpeg,.png,.heic,.webp,image/*,application/pdf" /></label>
+      <div class="grade-actions"><button type="button" class="btn primary" id="luSendBtn">ส่งไฟล์</button></div>
+      <p class="note" id="luNote"></p>
+      <ul class="attach-list" id="luDone"></ul>
+    </section>
+  </div>
+
   <div class="app hidden" id="gradeApp">
     <header class="topbar">
       <div class="logo-slot logo-mcu" id="gradeLogoMcu"></div>
@@ -1160,7 +1220,7 @@
     </header>
     <div id="gradeGate" class="card grade-gate">
       <h2>เข้าสู่ระบบกรรมการให้คะแนน</h2>
-      <p class="note">เลือกชื่อผู้ตรวจ แล้วกรอกรหัสผู้ตรวจของท่าน (เช่น 6901-1234) ระบบจะตรวจสอบรหัสกับเซิร์ฟเวอร์ก่อนเปิดหน้าต่างให้คะแนน ผู้ดูแลระบบใช้ ADMIN_KEY ได้</p>
+      <p class="note">เลือกชื่อผู้ตรวจ แล้วกรอกรหัสผู้ตรวจของท่าน (เช่น 6901) ระบบจะตรวจสอบรหัสกับเซิร์ฟเวอร์ก่อนเปิดหน้าต่างให้คะแนน ผู้ดูแลระบบใช้ ADMIN_KEY ได้</p>
       <div class="grid-fields">
         <label class="field">
           <span>ชื่อผู้ตรวจ</span>
@@ -1169,7 +1229,7 @@
           <datalist id="graderNameList"></datalist>
         </label>
         <label class="field">
-          <span>รหัสผู้ตรวจ (เช่น 6901-1234)</span>
+          <span>รหัสผู้ตรวจ (เช่น 6901)</span>
           <input type="password" id="committeeKey" autocomplete="off" />
         </label>
       </div>
@@ -1210,8 +1270,13 @@
     const PROGRESS_POINTER = "qe-exam-progress-current";
     const DEFAULT_DURATIONS = [150, 120, 110];
     // Paste the deployed Google Apps Script web app URL here. Leave as PASTE_WEB_APP_URL to preview only.
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHB6dGtNax8jONoOKKcmynELxzLn5MLfZZmMH78VT27fhjncOeF6WYimvilDBvZTc/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxM9O0Pvcd6xM5NY_s-YrF_tQYP7a-zwLzbLxYo_gqgKcfCSyFnxAzV4zdUiwCMBB5o/exec";
 
+    // Earlier deployments of the exam backend that are still live; students who kept an old link may have submitted there.
+    const OLD_SCRIPT_URLS = [
+      "https://script.google.com/macros/s/AKfycbxHB6dGtNax8jONoOKKcmynELxzLn5MLfZZmMH78VT27fhjncOeF6WYimvilDBvZTc/exec",
+      "https://script.google.com/macros/s/AKfycbyjG6S0R3BBd-IETu_UiUnNCQpGxt3Mag-io7C1SodJDbxIYXz8NurEsG82uyVgOh0/exec"
+    ];
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/1hAefq4bojIkXTfHFaUu4E454KKGKEnj0yXf1ArxsW5U/edit";
     const MAX_UPLOAD_MB = 10;
     const CONFIG_CACHE_KEY = "qe-exam-published-config-v1";
@@ -1287,19 +1352,48 @@
     ];
 
     // ผู้ตรวจ / กรรมการสอบ QE 2569 — เฉพาะชื่อ (รหัสเก็บไว้ที่ Apps Script เท่านั้น เพราะหน้าเว็บนี้เป็นสาธารณะ)
+    // หมวด (cat) ตามเอกสาร "รายชื่อคณะกรรมการตรวจข้อสอบข้อเขียน QE รุ่นที่ 14" · cat 0 = อื่น ๆ (ไม่อยู่ในรายชื่อตรวจข้อเขียน)
     const DEFAULT_GRADERS = [
-      { code: "", name: "รองศาสตราจารย์ ดร.สิริวัฒน์ ศรีเครือดง" },
-      { code: "", name: "ศาสตราจารย์ ดร.สมโภชน์ เอี่ยมสุภาษิต" },
-      { code: "", name: "รองศาสตราจารย์ ดร.เมธาวี อุดมธรรมานุภาพ" },
-      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.วิชชุดา ฐิติโชติรัตนา" },
-      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.มั่น เสือสูงเนิน" },
-      { code: "", name: "รองศาสตราจารย์ ดร.กมลาศ ภูวชนาธิพงศ์" },
-      { code: "", name: "รองศาสตราจารย์ ดร.พุทธชาติ แผนสมบุญ" },
-      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.สุวัฒสัน รักขันโท" },
-      { code: "", name: "ผู้ช่วยศาสตราจารย์ ดร.กิตติพงษ์ เนียมรอด" },
-      { code: "", name: "อาจารย์ ดร.ธนศักดิ์ พรทัพพสาร" },
-      { code: "", name: "อาจารย์ ดร.พรทิพย์ เกศตระกูล" }
+      { code: "", cat: 1, name: "รศ.ดร.สิริวัฒน์ ศรีเครือดง" },
+      { code: "", cat: 3, name: "ศ.ดร.สมโภชน์ เอี่ยมสุภาษิต" },
+      { code: "", cat: 2, name: "รศ.ดร.เมธาวี อุดมธรรมานุภาพ" },
+      { code: "", cat: 2, name: "ผศ.ดร.วิชชุดา ฐิติโชติรัตนา" },
+      { code: "", cat: 1, name: "ผศ.ดร.มั่น เสือสูงเนิน" },
+      { code: "", cat: 3, name: "รศ.ดร.กมลาศ ภูวชนาธิพงศ์" },
+      { code: "", cat: 1, name: "รศ.ดร.พุทธชาติ แผนสมบุญ" },
+      { code: "", cat: 3, name: "ผศ.ดร.สุวัฒสัน รักขันโท" },
+      { code: "", cat: 3, name: "พล.อ.ต.รศ.ดร.นภัทร์ แก้วนาค" },
+      { code: "", cat: 2, name: "อ.ดร.ธนศักดิ์ พรทัพพสาร" },
+      { code: "", cat: 2, name: "อ.ดร.พรทิพย์ เกศตระกูล" }
     ];
+
+    // Match a grader name to a known one even if a title or spelling differs slightly (e.g. พรทัพพสาร / พรทัพสาร).
+    function graderKey(name) {
+      const s = String(name || "").replace(/\s*\(.*\)\s*$/, "");
+      const i = s.lastIndexOf("ดร.");
+      const rest = (i >= 0 ? s.slice(i + 3) : s).trim();
+      return rest.split(/\s+/)[0] || rest;
+    }
+
+    function graderCatOf(name) {
+      const lists = [config.graderGroups || [], config.graders || [], DEFAULT_GRADERS];
+      for (const list of lists) {
+        const exact = list.find(function (g) { return g.name === name && g.cat != null; });
+        if (exact) return Number(exact.cat) || 0;
+      }
+      const k = graderKey(name);
+      for (const list of lists) {
+        const near = list.find(function (g) { return g.cat != null && graderKey(g.name) === k; });
+        if (near) return Number(near.cat) || 0;
+      }
+      return 0;
+    }
+
+    // Subject slot (1-3) that holds a given content category in the published exam.
+    function subjectForCat(cat) {
+      const i = config.questions.findIndex(function (q) { return Number(q.cat) === Number(cat); });
+      return i >= 0 ? i + 1 : null;
+    }
 
     function parseRosterText(text) {
       const out = [];
@@ -1313,8 +1407,11 @@
     function parseGradersText(text) {
       const out = [];
       String(text || "").split(/\r?\n/).forEach(function (line) {
-        const m = line.trim().match(/^([0-9A-Za-z_-]{3,})[\s,;]+(.+)$/);
-        if (m && !out.some(function (g) { return g.code === m[1]; })) out.push({ code: m[1], name: m[2].trim() });
+        const m = line.trim().match(/^([0-9A-Za-z_-]{3,})[\s,;]+(.+?)(?:[\s,;]+([0-3]))?$/);
+        if (m && !out.some(function (g) { return g.code === m[1]; })) {
+          const name = m[2].trim();
+          out.push({ code: m[1], name: name, cat: m[3] != null ? Number(m[3]) : graderCatOf(name) });
+        }
       });
       return out;
     }
@@ -1720,8 +1817,14 @@
           return merged;
         }
         const duration = Number(q.durationMin);
-        const cat = Number(q.cat) || bankById(q.bankId).cat;
+        const bank = bankById(q.bankId);
+        const cat = Number(q.cat) || bank.cat;
+        const c = CATEGORIES[cat] || CATEGORIES[bank.cat];
         return Object.assign({}, def, q, {
+          th: q.th && String(q.th).trim() ? q.th : bank.th,
+          en: q.en && String(q.en).trim() ? q.en : bank.en,
+          titleTh: q.titleTh && String(q.titleTh).trim() ? q.titleTh : c.titleTh,
+          titleEn: q.titleEn && String(q.titleEn).trim() ? q.titleEn : c.titleEn,
           cat: cat,
           durationMin: duration > 0 ? duration : def.durationMin,
           points: q.points != null && q.points !== "" ? Number(q.points) : CATEGORIES[cat].points
@@ -1746,7 +1849,9 @@
         questions: defaultQuestions(),
         guide: defaultGuide(),
         roster: DEFAULT_ROSTER.slice(),
+        lateUploadOpen: true,
         graderNames: DEFAULT_GRADERS.map(function (g) { return g.name; }),
+        graderGroups: DEFAULT_GRADERS.map(function (g) { return { name: g.name, cat: g.cat }; }),
         graders: DEFAULT_GRADERS.slice()
       };
     }
@@ -1764,7 +1869,9 @@
         questions: normalizeQuestions(parsed.questions),
         guide: normalizeGuide(parsed.guide),
         roster: normalizeRoster(parsed.roster),
+        lateUploadOpen: parsed.lateUploadOpen === false ? false : true,
         graderNames: Array.isArray(parsed.graderNames) && parsed.graderNames.length ? parsed.graderNames.map(String) : base.graderNames,
+        graderGroups: Array.isArray(parsed.graderGroups) && parsed.graderGroups.length ? parsed.graderGroups : base.graderGroups,
         graders: Array.isArray(parsed.graders) ? parsed.graders : base.graders
       };
     }
@@ -1774,6 +1881,7 @@
       const copy = JSON.parse(JSON.stringify(config));
       delete copy.graders;
       copy.graderNames = (config.graders || []).map(function (g) { return g.name; });
+      copy.graderGroups = (config.graders || []).map(function (g) { return { name: g.name, cat: g.cat != null ? Number(g.cat) : graderCatOf(g.name) }; });
       return copy;
     }
 
@@ -1796,7 +1904,9 @@
           questions: normalizeQuestions(parsed.questions),
           guide: normalizeGuide(parsed.guide),
           roster: normalizeRoster(parsed.roster),
+          lateUploadOpen: parsed.lateUploadOpen === false ? false : true,
           graderNames: Array.isArray(parsed.graderNames) && parsed.graderNames.length ? parsed.graderNames.map(String) : base.graderNames,
+        graderGroups: Array.isArray(parsed.graderGroups) && parsed.graderGroups.length ? parsed.graderGroups : base.graderGroups,
           graders: Array.isArray(parsed.graders) ? parsed.graders : base.graders
         };
       } catch (e) {
@@ -1961,9 +2071,61 @@
         const pill = $("savePill");
         if (pill) {
           const clock = fmtClock(Date.now());
-          pill.textContent = fmt(t().autosavedAt || t().savedAt, { t: clock });
+          pill.textContent = fmt(t().autosavedAt || t().savedAt, { t: clock }) + draftSuffix();
         }
       } catch (err) {}
+    }
+
+    // Online backup of the answers in progress (sheet tab "ร่างคำตอบ"), so nothing is lost if this device fails.
+    const DRAFT_EVERY_SEC = 60;
+    let draftTick = 0;
+    let lastDraftSig = "";
+    let draftInFlight = false;
+
+    function draftSuffix() {
+      if (!state.lastDraftAt) return "";
+      return (state.lang === "en" ? " · online backup " : " · สำรองออนไลน์ ") + state.lastDraftAt;
+    }
+
+    function draftPayload() {
+      return {
+        action: "draft",
+        studentId: currentStudentId(),
+        fullName: $("fullName").value.trim(),
+        sessionId: state.sessionId,
+        status: "กำลังสอบ",
+        currentSubject: String(state.q + 1),
+        question1: state.answers[0],
+        question2: state.answers[1],
+        question3: state.answers[2],
+        questionSet: questionSetLabel(),
+        attachments: attachmentsLabel(),
+        violationCount: String(state.pasteAttempts),
+        startedAt: state.startedAt || ""
+      };
+    }
+
+    async function sendDraft(force) {
+      if (!isAppsScriptConfigured() || !state.entered || state.submitted || isStaffRoute()) return;
+      if (!/^\d{10}$/.test(currentStudentId()) || !anySubjectStarted()) return;
+      const payload = draftPayload();
+      const sig = JSON.stringify([payload.question1, payload.question2, payload.question3, payload.attachments, payload.currentSubject, payload.violationCount]);
+      if (!force && sig === lastDraftSig) return;
+      if (draftInFlight) return;
+      draftInFlight = true;
+      try {
+        const res = await postApps(payload);
+        if (res && res.ok) {
+          lastDraftSig = sig;
+          state.lastDraftAt = fmtClock(Date.now()).slice(0, 5);
+          const pill = $("savePill");
+          if (pill && state.lastSave) pill.textContent = fmt(t().autosavedAt || t().savedAt, { t: state.lastSave.slice(-8) }) + draftSuffix();
+        }
+      } catch (err) {
+        // offline: answers are still saved on this device; the next tick retries
+      } finally {
+        draftInFlight = false;
+      }
     }
 
     function scheduleSave() {
@@ -2204,6 +2366,7 @@
       const cq = config.questions[i] || {};
       state.lockedQ[i] = { bankId: cq.bankId || "", cat: cq.cat || null, th: cq.th || "", en: cq.en || "", titleTh: cq.titleTh || "", titleEn: cq.titleEn || "" };
       if (!state.startedAt) state.startedAt = fmtNow();
+      setTimeout(function () { sendDraft(true); }, 0);
       if (i === 0) {
         const clock = fmtClock(state.subjectStartedAt[i]);
         $("startTime").value = clock.slice(0, 5);
@@ -2245,6 +2408,7 @@
       state.subjectFinished[state.q] = true;
       if (state.maxReached < state.q + 1) state.maxReached = state.q + 1;
       persistProgress();
+      sendDraft(true);
       enterSubject(state.q + 1);
     }
 
@@ -2257,6 +2421,7 @@
       $("confirmTitle").textContent = title;
       $("confirmBody").textContent = body;
       $("confirmOk").textContent = okText;
+      $("confirmOk").disabled = false;
       $("confirmOk").classList.remove("danger");
       $("confirmCancel").classList.add("hidden");
       $("confirmOverlay").classList.add("show");
@@ -2271,17 +2436,32 @@
         return;
       }
       clearProgress();
+      resetExamState();
+      renderStudent();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function resetExamState() {
+      if (state.saveTimer) { clearTimeout(state.saveTimer); state.saveTimer = null; }
       state.entered = false;
+      state.submitted = false;
       state.q = 0;
       state.maxReached = 0;
       state.answers = ["", "", ""];
       state.attachments = [[], [], []];
       state.lockedQ = [null, null, null];
+      state.subjectStartedAt = [null, null, null];
       state.subjectFinished = [false, false, false];
+      state.subjectOvertimeMin = [null, null, null];
+      state.overtimeWarned = [false, false, false];
+      state.pasteLog = [];
+      state.pasteAttempts = 0;
       state.lastSave = "";
+      state.lastDraftAt = "";
+      state.sessionId = "QE-2569-S-" + Math.random().toString(36).slice(2, 8).toUpperCase();
       if ($("guideDetails")) $("guideDetails").open = true;
-      renderStudent();
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      if ($("result")) $("result").innerHTML = "";
+      if ($("submitBtn")) $("submitBtn").disabled = false;
     }
 
     function enterExamRoom() {
@@ -2350,13 +2530,14 @@
       }
       if (state.lastSave) {
         const clock = state.lastSave.slice(-8);
-        $("savePill").textContent = fmt(L.autosavedAt || L.savedAt, { t: clock });
+        $("savePill").textContent = fmt(L.autosavedAt || L.savedAt, { t: clock }) + draftSuffix();
       } else {
         $("savePill").textContent = L.notSaved;
       }
       $("adminOpenBtn").textContent = L.adminBtn;
       $("enterExamBtn").textContent = L.enterExam;
       if ($("backHomeBtn")) $("backHomeBtn").textContent = L.backHome;
+      if ($("lateUploadCard")) $("lateUploadCard").classList.toggle("hidden", !!state.entered || config.lateUploadOpen === false);
       renderGuide();
       renderRosterPick();
       const bar = $("candidateBar");
@@ -2427,11 +2608,20 @@
         head.value = "";
         head.textContent = "— เลือกชื่อผู้ตรวจ —";
         pick.appendChild(head);
-        (config.graderNames || []).forEach(function (n) {
-          const o = document.createElement("option");
-          o.value = n;
-          o.textContent = n;
-          pick.appendChild(o);
+        const groups = { 1: [], 2: [], 3: [], 0: [] };
+        (config.graderNames || []).forEach(function (n) { groups[graderCatOf(n)].push(n); });
+        [1, 2, 3, 0].forEach(function (cat) {
+          if (!groups[cat].length) return;
+          const og = document.createElement("optgroup");
+          const slot = cat ? subjectForCat(cat) : null;
+          og.label = cat ? (CATEGORIES[cat].titleTh + (slot ? " (วิชาที่ " + slot + ")" : "")) : "อื่น ๆ";
+          groups[cat].forEach(function (n) {
+            const o = document.createElement("option");
+            o.value = n;
+            o.textContent = n;
+            og.appendChild(o);
+          });
+          pick.appendChild(og);
         });
         const other = document.createElement("option");
         other.value = "__other";
@@ -2496,14 +2686,14 @@
         throw new Error(fmt(t().attachTooBig, { name: file.name, mb: MAX_UPLOAD_MB }));
       }
       const data = await readFileBase64(file);
-      const q = config.questions[Number(meta.subject) - 1] || {};
+      const q = meta.role === "student" || !meta.role ? effectiveQuestion(Number(meta.subject) - 1) : (config.questions[Number(meta.subject) - 1] || {});
       const res = await postApps({
         action: "upload",
         adminKey: meta.adminKey || "",
         studentId: meta.studentId,
         fullName: meta.fullName,
         subject: String(meta.subject),
-        subjectTitle: q.titleTh || "",
+        subjectTitle: meta.subjectTitle || q.titleTh || "",
         bankId: meta.bankId || q.bankId || "",
         fileName: file.name,
         mimeType: file.type || "application/octet-stream",
@@ -2643,7 +2833,7 @@
       if (started) growAnswer();
       const wc = wordCount(started ? state.answers[state.q] : "");
       $("countMeta").textContent = fmt(L.wordsChars, wc);
-      $("pasteMeta").textContent = fmt(L.pasteMeta, { n: state.pasteAttempts });
+      $("pasteMeta").textContent = fmt(L.pasteMeta, { n: pasteOnlyCount() });
       const isLast = state.q === total - 1;
       $("submitCard").classList.toggle("hidden", !isLast);
       $("submitWrap").classList.toggle("hidden", !isLast);
@@ -2752,11 +2942,16 @@
       el.classList.add("show");
     }
 
+    // Paste attempts only (paste, drop, Shift+Insert); right-click and copy/cut count as other violations.
+    function pasteOnlyCount() {
+      return state.pasteLog.filter(function (l) { return /(^|\s)(paste|drop|keydown-paste|shift-insert|insertFromPaste|insertFromDrop)/.test(l); }).length;
+    }
+
     function markPaste(reason) {
       state.pasteAttempts += 1;
       state.pasteLog.push(fmtNow() + " " + reason);
       renderPasteBanner();
-      $("pasteMeta").textContent = fmt(t().pasteMeta, { n: state.pasteAttempts });
+      $("pasteMeta").textContent = fmt(t().pasteMeta, { n: pasteOnlyCount() });
       scheduleSave();
     }
 
@@ -2864,7 +3059,7 @@
         submitTime: submitTime || "",
         violationCount: String(state.pasteAttempts),
         violationLog: logParts.join("; "),
-        pasteAttempts: String(state.pasteAttempts),
+        pasteAttempts: String(pasteOnlyCount()),
         sessionId: state.sessionId,
         device: deviceLabel(),
         screen: window.innerWidth + "×" + window.innerHeight,
@@ -3010,13 +3205,17 @@
       return hash === "admin" || hash.indexOf("admin") === 0;
     }
 
+    function isUploadRoute() {
+      return (location.hash || "").replace(/^#/, "") === "upload";
+    }
+
     function isGradeRoute() {
       const hash = (location.hash || "").replace(/^#/, "");
       return hash === "grade" || hash === "committee";
     }
 
     function isStaffRoute() {
-      return isAdminRoute() || isGradeRoute();
+      return isAdminRoute() || isGradeRoute() || isUploadRoute();
     }
 
     function getCommitteeKey() {
@@ -3082,6 +3281,30 @@
       mountGradeRoot($("adminGradeTab"));
     }
 
+    function renderSubjectOptions() {
+      const sel = $("gradeSubject");
+      if (!sel) return;
+      [1, 2, 3].forEach(function (n) {
+        const opt = sel.querySelector('option[value="' + n + '"]');
+        const q = config.questions[n - 1];
+        if (opt && q) opt.textContent = "วิชาที่ " + n + " — " + (q.titleTh || "");
+      });
+    }
+
+    // Start a grader on the subject of their own category (from the committee list).
+    function applyGraderCategory(name) {
+      renderSubjectOptions();
+      const cat = graderCatOf(name);
+      const slot = cat ? subjectForCat(cat) : null;
+      state.graderCat = cat;
+      if (slot && $("gradeSubject")) {
+        $("gradeSubject").value = String(slot);
+        if ($("gradeOralPass") && $("gradeOralPass").value === "yes") $("gradeOralPass").value = "na";
+      }
+      if (slot && $("fbSubject")) $("fbSubject").value = String(slot);
+      renderWhoChip();
+    }
+
     function renderWhoChip() {
       const chip = $("whoChip");
       if (!chip) return;
@@ -3090,7 +3313,8 @@
       if (!key) return;
       let name = "";
       try { name = sessionStorage.getItem(COMMITTEE_NAME_STORE) || ""; } catch (e) {}
-      $("whoName").textContent = name || "ผู้ตรวจ";
+      const cat = graderCatOf(name);
+      $("whoName").textContent = (name || "ผู้ตรวจ") + (cat ? " · หมวดที่ " + cat : "");
       const shown = $("whoEye").dataset.shown === "1";
       $("whoCode").textContent = shown ? key : "••••••••";
       $("whoEye").textContent = shown ? "🙈" : "👁";
@@ -3109,9 +3333,7 @@
       } catch (e) {
         hints.push("เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + String(e && e.message ? e.message : e));
       }
-      if (/^\d{4}$/.test(String(code).trim())) {
-        hints.push("รหัสผู้ตรวจมีรูปแบบ 69xx-xxxx (เช่น 6901-1234) กรุณาพิมพ์ให้ครบทั้งสองส่วน");
-      }
+      hints.push("กรุณาตรวจว่าเลือกชื่อและกรอกรหัสของท่านถูกต้อง (รหัส 4 หลัก เช่น 6901)");
       return hints.join(" · ");
     }
 
@@ -3187,6 +3409,7 @@
           applyCentralList(key, data);
           if (note) note.textContent = "";
           showCommitteeWorkspace();
+          applyGraderCategory(finalName);
           return true;
         }
         const msg = await diagnoseLogin(key, (data && data.error) ? data.error : "");
@@ -3225,6 +3448,7 @@
           applyCentralList(key, data);
           if (note) note.textContent = "";
           showCommitteeWorkspace();
+          applyGraderCategory(name);
           return true;
         }
         setCommitteeKey("");
@@ -3250,6 +3474,7 @@
       centralFiles = [];
       centralFolderUrl = "";
       centralGrades = [];
+      centralDrafts = [];
       centralRole = "";
       centralName = "";
       editingSheetGrade = null;
@@ -3268,8 +3493,22 @@
         if ((location.hash || "").replace(/^#/, "")) location.hash = "";
         return;
       }
+      if (isUploadRoute() && state.entered) {
+        location.hash = "";
+        return;
+      }
       const admin = isAdminRoute();
       const grade = isGradeRoute();
+      const upload = isUploadRoute();
+      if ($("uploadApp")) $("uploadApp").classList.toggle("hidden", !upload);
+      if (upload) {
+        $("studentApp").classList.add("hidden");
+        $("adminApp").classList.add("hidden");
+        if ($("gradeApp")) $("gradeApp").classList.add("hidden");
+        renderLateUpload();
+        applyLogos();
+        return;
+      }
       $("studentApp").classList.toggle("hidden", admin || grade);
       $("adminApp").classList.toggle("hidden", !admin);
       if ($("gradeApp")) $("gradeApp").classList.toggle("hidden", !grade);
@@ -3342,12 +3581,16 @@
         fields.appendChild(wrap);
       });
       renderDeviceProgress();
+      if ($("lateUploadToggle")) $("lateUploadToggle").checked = config.lateUploadOpen !== false;
       if ($("rosterText")) {
         $("rosterText").value = (config.roster || []).map(function (r) { return r.sid + "\t" + r.name; }).join("\n");
         $("rosterNote").textContent = (config.roster || []).length + " คน";
       }
       if ($("gradersText")) {
-        $("gradersText").value = (config.graders || []).map(function (g) { return g.code + "\t" + g.name; }).join("\n");
+        $("gradersText").value = (config.graders || []).map(function (g) {
+          const cat = g.cat != null ? Number(g.cat) : graderCatOf(g.name);
+          return (g.code || "") + "\t" + g.name + "\t" + cat;
+        }).join("\n");
         $("gradersNote").textContent = (config.graders || []).length + " ท่าน";
       }
       if ($("guideTh")) $("guideTh").value = (config.guide && config.guide.th) || "";
@@ -3587,6 +3830,7 @@
     let centralFiles = [];
     let centralFolderUrl = "";
     let centralGrades = [];
+    let centralDrafts = [];
     let centralRole = "";
     let centralName = "";
     let editingSheetGrade = null;
@@ -3739,6 +3983,7 @@
       if (b1) b1.setAttribute("aria-selected", String(tab === "settings"));
       if (b2) b2.setAttribute("aria-selected", String(tab === "grade"));
       if (tab === "grade") {
+        renderSubjectOptions();
         mountGradeRoot($("adminGradeTab"));
         const root = $("gradeRoot");
         if (root) root.classList.remove("committee-session");
@@ -4088,6 +4333,21 @@
 
     function captureCentralGrades(data) {
       centralGrades = Array.isArray(data.grades) ? data.grades : [];
+      // Drafts of exams that were never submitted are shown to graders as "ร่าง (ยังไม่ส่ง)".
+      const sent = {};
+      centralSubmissions.forEach(function (s) { if (s.sessionId) sent[s.sessionId] = true; });
+      centralDrafts = (Array.isArray(data.drafts) ? data.drafts : []).filter(function (d) {
+        return d.sessionId && !sent[d.sessionId] && String(d.status || "").indexOf("ส่งแล้ว") !== 0;
+      }).map(function (d) {
+        return normalizeSubmission(Object.assign({}, d, {
+          submissionMode: "ร่าง (ยังไม่ส่ง) บันทึกล่าสุด " + (d.timestamp || ""),
+          submitStatus: "ยังไม่ส่ง",
+          submitTime: "",
+          isDraft: true
+        }));
+      });
+      setTimeout(renderSubmissionPick, 0);
+      setTimeout(renderStatusTable, 0);
       centralRole = (data.grader && data.grader.role) || "";
       centralName = (data.grader && data.grader.name) || "";
       setTimeout(renderSheetGrades, 0);
@@ -4120,7 +4380,12 @@
 
     function canEditSheetGrade(row) {
       if (centralRole === "admin") return true;
-      return centralRole === "grader" && !!centralName && String(row.graderName || "").indexOf(centralName) === 0;
+      if (centralRole !== "grader") return false;
+      const gn = String(row.graderName || "");
+      const code = getAdminKey();
+      if (!!centralName && gn.indexOf(centralName) === 0) return true;
+      if (!!code && (gn.indexOf("(" + code + ")") !== -1 || gn.indexOf("(" + code + "-") !== -1)) return true;
+      return !!centralName && graderKey(gn) === graderKey(centralName);
     }
 
     function renderSheetGrades() {
@@ -4300,76 +4565,183 @@
       return q ? { id: q.bankId || "", text: q.th || "", fromConfig: true } : null;
     }
 
+    // Category (1-3) answered in slot n of one submission row: from the row's own question set, else the current exam.
+    function catOfSlot(row, n) {
+      const set = parseQuestionSet(row && row.questionSet);
+      const b = set[n] ? bankById(set[n]) : null;
+      if (b) return { cat: b.cat, bankId: b.id };
+      const q = config.questions[n - 1] || {};
+      return { cat: Number(q.cat) || n, bankId: q.bankId || "" };
+    }
+
+    function catOfFile(f, rows) {
+      const b = f.bankId ? bankById(f.bankId) : null;
+      if (b) return b.cat;
+      const row = (rows || []).find(function (r) { return r.sessionId && r.sessionId === f.sessionId; });
+      return catOfSlot(row, Number(f.subject)).cat;
+    }
+
+    // Every answer a student gave, from all submissions and unsent drafts, grouped by content category.
+    // (Students who started before the exam settings changed have research in slot 2 and applied in slot 3;
+    //  later sessions have the reverse, and some students submitted their subjects in separate rows.)
+    const MERGED_MODE = "รวมคำตอบตามหมวด";
+
+    // Session IDs that a consolidated ("ฉบับรวม") row was built from, listed in its log as "รวมจาก: a, b (...)".
+    function mergedSources(row) {
+      const m = String(row.violationLog || "").match(/รวมจาก:\s*([^()]*)/);
+      return m ? m[1].split(",").map(function (x) { return x.trim(); }).filter(Boolean) : [];
+    }
+
+    function collectStudentAnswers(studentId) {
+      // Rows sent before the first exam date were system tests (e.g. "สวัสดีค่ะ" on 23 Nov), not exam answers.
+      const examStart = config.questions.map(function (q) { return q.date || ""; }).filter(Boolean).sort()[0] || "";
+      const all = submissionsForStudent(studentId).filter(function (r) {
+        return !examStart || !r.submitTime || String(r.submitTime) >= examStart;
+      });
+      // Status-only rows: absent, paper exam, or a placeholder marking lost data (never graded as answers).
+      const isLost = function (r) { return /^REPLACEMENT-|^LOST-/.test(String(r.sessionId || "")) || /ห้ามให้คะแนน/.test(String(r.submitStatus || "")); };
+      const status = all.filter(function (r) { return r.submissionMode === "ไม่มาสอบ" || r.submissionMode === "กระดาษ" || isLost(r); });
+      const merged = all.filter(function (r) { return r.submissionMode === MERGED_MODE; });
+      const covered = {};
+      merged.concat(status).forEach(function (r) { mergedSources(r).forEach(function (id) { covered[id] = true; }); });
+      // A consolidated row replaces the rows it was built from; anything sent later is still shown next to it.
+      const latestMerged = merged.length ? [merged[merged.length - 1]] : [];
+      const subs = latestMerged.concat(all.filter(function (r) {
+        return r.submissionMode !== MERGED_MODE && status.indexOf(r) === -1 && !covered[r.sessionId];
+      }));
+      const drafts = centralDrafts.filter(function (d) { return String(d.studentId) === String(studentId) && !covered[d.sessionId]; });
+      const rows = subs.concat(drafts);
+      const byCat = { 1: [], 2: [], 3: [] };
+      rows.forEach(function (r) {
+        [1, 2, 3].forEach(function (n) {
+          const text = String(r["question" + n] || "");
+          if (!text.trim()) return;
+          const info = catOfSlot(r, n);
+          (byCat[info.cat] || (byCat[info.cat] = [])).push({
+            text: text, slot: n, bankId: info.bankId, row: r,
+            when: r.submitTime || r.timestamp || "", isDraft: !!r.isDraft
+          });
+        });
+      });
+      Object.keys(byCat).forEach(function (c) {
+        byCat[c].sort(function (a, b) { return String(b.when).localeCompare(String(a.when)); });
+      });
+      const files = filesForStudent(studentId).map(function (f) { return Object.assign({ cat: catOfFile(f, rows) }, f); });
+      const absent = status.some(function (r) { return r.submissionMode === "ไม่มาสอบ"; });
+      const paper = status.some(function (r) { return r.submissionMode === "กระดาษ"; });
+      const lost = status.some(isLost);
+      return { lost: lost, rows: rows, subs: subs, drafts: drafts, byCat: byCat, files: files, merged: latestMerged[0] || null, absent: absent, paper: paper, all: all };
+    }
+
+    function fileListElement(fl) {
+      const ul = document.createElement("ul");
+      ul.className = "attach-list";
+      fl.forEach(function (f) {
+        const li = document.createElement("li");
+        const who = (f.role && f.role !== "student" ? " · อัปโหลดโดย " + (f.uploadedBy || f.role) : "") + (f.note ? " · " + f.note : "");
+        li.innerHTML = "<span>📎 " + escapeHtml(f.fileName || f.name || "ไฟล์") + " <span class='meta'>" + escapeHtml(fmtBytes(f.size)) + " · " + escapeHtml(f.timestamp || "") + escapeHtml(who) + "</span></span>";
+        const actions = document.createElement("span");
+        actions.style.display = "flex";
+        actions.style.gap = "6px";
+        const view = document.createElement("button");
+        view.type = "button";
+        view.className = "btn small";
+        view.textContent = "เปิดดู";
+        const viewer = document.createElement("div");
+        view.addEventListener("click", function () { viewCentralFile(f, viewer, view); });
+        actions.appendChild(view);
+        if (f.url) {
+          const a = document.createElement("a");
+          a.className = "btn small";
+          a.href = f.url;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.textContent = "Drive ↗";
+          actions.appendChild(a);
+        }
+        li.appendChild(actions);
+        li.appendChild(viewer);
+        viewer.style.flexBasis = "100%";
+        ul.appendChild(li);
+      });
+      return ul;
+    }
+
     function renderAnswerPane() {
       const box = $("answerPane");
       if (!box) return;
-      const sid = ($("gradeSid") && $("gradeSid").value || "").trim();
-      let sub = selectedSubmission;
-      if (!sub && sid) {
-        const list = submissionsForStudent(sid);
-        sub = list.length ? list[list.length - 1] : null;
-      }
-      const studentId = sub ? sub.studentId : sid;
-      const files = studentId ? filesForStudent(studentId) : [];
-      if (!sub && !files.length) {
-        box.innerHTML = "<p class='note'>ยังไม่มีคำตอบในโหมดนี้ กรอกชื่อและรหัสแล้วให้คะแนนได้เลย หรือเชื่อมต่อด้วย ADMIN_KEY เพื่อดึงคำตอบและไฟล์แนบจากชีต</p>";
+      const sid = (selectedSubmission && selectedSubmission.studentId) || ($("gradeSid") && $("gradeSid").value || "").trim();
+      const data = sid ? collectStudentAnswers(sid) : null;
+      if (!data || (!data.rows.length && !data.files.length && !data.absent && !data.paper && !data.lost)) {
+        box.innerHTML = "<p class='note'>ยังไม่มีคำตอบในโหมดนี้ เลือกนิสิตจากรายการ หรือเชื่อมต่อด้วยรหัสผู้ตรวจเพื่อดึงคำตอบและไฟล์แนบจากชีต</p>";
         return;
       }
-      const subj = ($("gradeSubject") && $("gradeSubject").value) || "overall";
+      const sel = ($("gradeSubject") && $("gradeSubject").value) || "overall";
+      const onlyCat = sel === "overall" ? null : (Number((config.questions[Number(sel) - 1] || {}).cat) || Number(sel));
       box.innerHTML = "";
+      const any = data.rows[0] || {};
       const head = document.createElement("div");
-      head.innerHTML = "<p class='note'>" + escapeHtml(sub ? submissionMeta(sub) : ("รหัส " + studentId + " · มีเฉพาะไฟล์แนบ")) + "</p>";
-      const others = studentId ? submissionsForStudent(studentId).length : 0;
-      if (others > 1) head.innerHTML += "<p class='note'>นิสิตคนนี้มีการส่ง " + others + " ครั้งในชีต (แสดงครั้งที่เลือก/ล่าสุด)</p>";
+      const parts = data.subs.map(function (r) {
+        return (r.submitTime || r.timestamp || "-") + (r.device && r.device !== "computer" ? " (" + r.device + ")" : "");
+      });
+      if (data.absent) {
+        box.innerHTML = "<p class='note'><strong>" + escapeHtml(((data.all[0] || {}).fullName || "") + " · " + sid) + "</strong></p><p class='banner show' style='display:block'>ไม่มาสอบ</p>";
+        return;
+      }
+      if (data.merged) {
+        const mnote = document.createElement("p");
+        mnote.className = "banner show restore-banner";
+        mnote.style.display = "block";
+        mnote.textContent = "แสดงฉบับรวม: คำตอบจากทุกครั้งที่ส่ง เรียงตามข้อสอบปัจจุบัน (ช่อง 1 = หมวด 1, ช่อง 2 = หมวด 2, ช่อง 3 = หมวด 3) · แถวเดิมยังเก็บไว้ในชีต";
+        box.appendChild(mnote);
+      }
+      if (data.lost) {
+        const lnote = document.createElement("p");
+        lnote.className = "banner show";
+        lnote.style.display = "block";
+        lnote.textContent = "⚠ นิสิตเข้าสอบแล้ว แต่ข้อมูลคำตอบสูญหายจากระบบ — แถวในชีตเป็นแถวสถานะ ไม่ใช่คำตอบ (ห้ามให้คะแนน) รอคำตอบที่นิสิตส่งย้อนหลัง";
+        box.appendChild(lnote);
+      }
+      if (data.paper) {
+        const pnote = document.createElement("p");
+        pnote.className = "banner show";
+        pnote.style.display = "block";
+        pnote.textContent = "นิสิตสอบแบบเขียนในกระดาษ: ดูไฟล์สแกนในแต่ละหมวด";
+        box.appendChild(pnote);
+      }
+      head.innerHTML = "<p class='note'><strong>" + escapeHtml((any.fullName || "") + " · " + sid) + "</strong><br>" +
+        (data.merged ? "ฉบับรวมจากการส่ง " + mergedSources(data.merged).length + " ครั้ง" : (data.subs.length ? "ส่งคำตอบ " + data.subs.length + " ครั้ง: " + escapeHtml(parts.join(" · ")) : "ยังไม่มีการกดส่ง")) +
+        (data.drafts.length ? " · มีร่างที่ยังไม่ได้กดส่ง " + data.drafts.length + " รายการ" : "") +
+        "<br>คำตอบด้านล่างรวมจากทุกครั้งที่ส่ง และจัดตามหมวดของโจทย์ (ไม่ใช่ตามเลขวิชา เพราะลำดับวิชาของนิสิตแต่ละคนอาจต่างกัน)</p>";
+      if (data.subs.some(function (r) { return r.device === "tablet"; })) {
+        head.innerHTML += "<p class='note'>หมายเหตุ: บนแท็บเล็ต การกดค้างที่หน้าจอถูกนับเป็น \"contextmenu\" ในบันทึกการละเมิด จึงไม่จำเป็นต้องหมายถึงการพยายามคัดลอก</p>";
+      }
       box.appendChild(head);
-      [1, 2, 3].forEach(function (n) {
-        if (subj !== "overall" && String(n) !== String(subj)) return;
-        const cfgQ = config.questions[n - 1] || {};
-        const title = (state.lang === "en" ? cfgQ.titleEn : cfgQ.titleTh) || ("วิชาที่ " + n);
+      [1, 2, 3].forEach(function (cat) {
+        if (onlyCat && cat !== onlyCat) return;
+        const c = CATEGORIES[cat];
         const art = document.createElement("article");
         art.className = "answer-block";
-        const qt = questionTextFor(sub, n);
-        let html = "<h3>วิชาที่ " + n + " — " + escapeHtml(title) + "</h3>";
-        if (qt && qt.text) {
-          html += "<details><summary class='note'>โจทย์ที่นิสิตได้รับ" + (qt.id ? " (ข้อ " + escapeHtml(qt.id) + ")" : "") + (qt.fromConfig ? " — ตามค่าปัจจุบัน" : "") + "</summary><div class='q-in-pane'>" + escapeHtml(qt.text) + "</div></details>";
+        const entries = data.byCat[cat] || [];
+        const qids = [];
+        entries.forEach(function (e) { if (e.bankId && qids.indexOf(e.bankId) === -1) qids.push(e.bankId); });
+        let html = "<h3>" + escapeHtml(c.titleTh) + "</h3>";
+        qids.forEach(function (id) {
+          const b = bankById(id);
+          if (b) html += "<details><summary class='note'>โจทย์ที่นิสิตได้รับ (ข้อ " + escapeHtml(id) + ")</summary><div class='q-in-pane'>" + escapeHtml(b.th) + "</div></details>";
+        });
+        if (!entries.length) {
+          html += "<pre class='answer-read'>— ไม่มีคำตอบที่พิมพ์ในระบบสำหรับหมวดนี้ —</pre>";
         }
-        const text = sub ? sub["question" + n] : "";
-        html += "<pre class='answer-read'>" + escapeHtml(text || "—") + "</pre>";
+        entries.forEach(function (e, i) {
+          const label = (e.isDraft ? "⚠ ร่างที่ยังไม่ได้กดส่ง บันทึกล่าสุด " : "ส่งเมื่อ ") + (e.when || "-") +
+            " · พิมพ์ในช่องวิชาที่ " + e.slot + (e.bankId ? " · ข้อ " + e.bankId : "") + " · " + e.text.length.toLocaleString() + " ตัวอักษร" +
+            (entries.length > 1 ? (i === 0 ? " (ล่าสุด)" : " (ครั้งก่อนหน้า)") : "");
+          html += "<p class='note' style='margin:10px 0 4px'>" + escapeHtml(label) + "</p><pre class='answer-read'>" + escapeHtml(e.text) + "</pre>";
+        });
         art.innerHTML = html;
-        const fl = filesForStudent(studentId, n);
-        if (fl.length) {
-          const ul = document.createElement("ul");
-          ul.className = "attach-list";
-          fl.forEach(function (f) {
-            const li = document.createElement("li");
-            const who = f.role && f.role !== "student" ? " · อัปโหลดโดย " + (f.uploadedBy || f.role) : "";
-            li.innerHTML = "<span>📎 " + escapeHtml(f.fileName || f.name || "ไฟล์") + " <span class='meta'>" + escapeHtml(fmtBytes(f.size)) + " · " + escapeHtml(f.timestamp || "") + escapeHtml(who) + "</span></span>";
-            const actions = document.createElement("span");
-            actions.style.display = "flex";
-            actions.style.gap = "6px";
-            const view = document.createElement("button");
-            view.type = "button";
-            view.className = "btn small";
-            view.textContent = "เปิดดู";
-            const viewer = document.createElement("div");
-            view.addEventListener("click", function () { viewCentralFile(f, viewer, view); });
-            actions.appendChild(view);
-            if (f.url) {
-              const a = document.createElement("a");
-              a.className = "btn small";
-              a.href = f.url;
-              a.target = "_blank";
-              a.rel = "noopener";
-              a.textContent = "Drive ↗";
-              actions.appendChild(a);
-            }
-            li.appendChild(actions);
-            li.appendChild(viewer);
-            viewer.style.flexBasis = "100%";
-            ul.appendChild(li);
-          });
-          art.appendChild(ul);
-        }
+        const fl = data.files.filter(function (f) { return f.cat === cat; });
+        if (fl.length) art.appendChild(fileListElement(fl));
         box.appendChild(art);
       });
       const up = document.createElement("button");
@@ -4378,9 +4750,9 @@
       up.style.marginTop = "10px";
       up.textContent = "อัปโหลดไฟล์เพิ่มให้นิสิตคนนี้";
       up.addEventListener("click", function () {
-        if ($("manSid")) $("manSid").value = studentId || "";
-        if ($("manName")) $("manName").value = (sub && sub.fullName) || ($("gradeFullName") && $("gradeFullName").value) || "";
-        if (sub && $("manCohort")) $("manCohort").value = sub.cohort || "";
+        if ($("manSid")) $("manSid").value = sid || "";
+        if ($("manName")) $("manName").value = any.fullName || ($("gradeFullName") && $("gradeFullName").value) || "";
+        if (any.cohort && $("manCohort")) $("manCohort").value = any.cohort;
         if ($("manCreateRow")) $("manCreateRow").checked = false;
         if ($("manualSection")) $("manualSection").scrollIntoView({ behavior: "smooth", block: "start" });
       });
@@ -4556,6 +4928,120 @@
       });
     }
 
+    // Send an exam that is still stored on this device (never submitted) to the sheet, without deleting it here.
+    async function recoverStoredExam(key, d, btn) {
+      if (!isAppsScriptConfigured()) { alert("ยังไม่ได้เชื่อมต่อเซิร์ฟเวอร์"); return; }
+      if (!/^\d{10}$/.test(String(d.studentId || ""))) { alert("รายการนี้ไม่มีรหัสนักศึกษา 10 หลัก จึงส่งเข้าชีตไม่ได้"); return; }
+      if (!confirm("ส่งคำตอบของ " + (d.fullName || d.studentId) + " ที่ค้างอยู่ในเครื่องนี้เข้าชีต?\n(ข้อมูลในเครื่องยังเก็บไว้ ไม่ถูกลบ)")) return;
+      btn.disabled = true;
+      btn.textContent = "กำลังส่ง...";
+      const log = Array.isArray(d.pasteLog) ? d.pasteLog.slice() : [];
+      const qs = [0, 1, 2].map(function (i) {
+        const lock = d.lockedQ && d.lockedQ[i];
+        const id = (lock && lock.bankId) || ((config.questions[i] || {}).bankId) || "custom";
+        return "S" + (i + 1) + "=" + id;
+      }).join("; ");
+      const att = [];
+      (d.attachments || []).forEach(function (list, i) {
+        (list || []).forEach(function (f) { att.push("[S" + (i + 1) + "] " + f.name + (f.url ? " " + f.url : "")); });
+      });
+      const now = fmtNow();
+      try {
+        const res = await postApps({
+          fullName: d.fullName || "",
+          studentId: d.studentId,
+          cohort: d.cohort || "",
+          level: d.level || "ป.เอก",
+          language: d.language || "th",
+          examDate: d.examDate || "",
+          startTime: d.startTime || "",
+          question1: (d.answers || [])[0] || "",
+          question2: (d.answers || [])[1] || "",
+          question3: (d.answers || [])[2] || "",
+          lastAutosave: d.lastSave || "",
+          submitStatus: "กู้คืนจากเครื่องโดยแอดมิน (นิสิตยังไม่ได้กดส่ง)",
+          submitTime: now,
+          violationCount: String(d.pasteAttempts || 0),
+          violationLog: log.join("; "),
+          pasteAttempts: String(log.filter(function (l) { return /(^|\s)(paste|drop|keydown-paste|shift-insert|insertFromPaste|insertFromDrop)/.test(l); }).length),
+          sessionId: d.sessionId || "",
+          device: "กู้คืนจากเครื่อง",
+          screen: "",
+          questionSet: qs,
+          attachments: att.join("\n"),
+          submissionMode: "กู้คืนจากเครื่อง"
+        });
+        if (!res || !res.ok) throw new Error((res && res.error) || "ส่งไม่สำเร็จ");
+        d.recoveredAt = now + " (แถวที่ " + res.row + ")";
+        try { localStorage.setItem(key, JSON.stringify(d)); } catch (err) {}
+        alert("ส่งเข้าชีตแล้ว แถวที่ " + res.row);
+      } catch (err) {
+        alert("ส่งไม่สำเร็จ: " + String(err && err.message ? err.message : err));
+      }
+      renderDeviceProgress();
+    }
+
+    async function postTo(url, body) {
+      const res = await fetch(url, { method: "POST", redirect: "follow", headers: { "Content-Type": "text/plain;charset=UTF-8" }, body: JSON.stringify(body) });
+      const text = await res.text();
+      try { return JSON.parse(text); } catch (err) { return { ok: false, error: text.slice(0, 120) }; }
+    }
+
+    async function searchOldLinks() {
+      const key = ($("oldLinkKey").value || "").trim() || ($("publishKey") && $("publishKey").value.trim()) || "";
+      const note = $("oldLinkNote");
+      const table = $("oldLinkTable");
+      table.innerHTML = "";
+      if (!key) { note.textContent = "กรุณาใส่ ADMIN_KEY"; return; }
+      note.textContent = "กำลังค้นหา...";
+      const cur = await postApps({ action: "list", adminKey: key });
+      if (!cur || !cur.ok) { note.textContent = "ADMIN_KEY ใช้กับระบบปัจจุบันไม่ได้: " + ((cur && cur.error) || ""); return; }
+      const have = {};
+      (cur.submissions || []).forEach(function (r) { if (r.sessionId) have[r.sessionId] = true; });
+      const lines = [];
+      const found = [];
+      for (let i = 0; i < OLD_SCRIPT_URLS.length; i++) {
+        let data;
+        try { data = await postTo(OLD_SCRIPT_URLS[i], { action: "list", adminKey: key }); } catch (err) { data = { ok: false, error: String(err && err.message ? err.message : err) }; }
+        if (!data || !data.ok || !Array.isArray(data.submissions)) {
+          lines.push("ลิงก์เก่า " + (i + 1) + ": ดึงรายการไม่ได้ (" + ((data && data.error) || "ไม่รองรับ") + ")");
+          continue;
+        }
+        const fresh = data.submissions.filter(function (r) { return !have[r.sessionId]; });
+        lines.push("ลิงก์เก่า " + (i + 1) + ": มีคำตอบ " + data.submissions.length + " รายการ · ยังไม่มีในชีตปัจจุบัน " + fresh.length + " รายการ");
+        fresh.forEach(function (r) { found.push({ link: i + 1, row: r }); });
+      }
+      note.textContent = lines.join("\n");
+      if (!found.length) return;
+      table.innerHTML = "<tr><th>ลิงก์</th><th>นิสิต</th><th>ส่งเมื่อ</th><th>คำตอบ (ตัวอักษร)</th><th></th></tr>";
+      found.forEach(function (f) {
+        const r = f.row;
+        const tr = document.createElement("tr");
+        tr.innerHTML = "<td>เก่า " + f.link + "</td><td>" + escapeHtml((r.fullName || "") + " · " + (r.studentId || "")) + "</td><td>" + escapeHtml(r.submitTime || r.timestamp || "") +
+          "</td><td>" + [1, 2, 3].map(function (n) { return String(r["question" + n] || "").length; }).join(" / ") + "</td>";
+        const td = document.createElement("td");
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "btn small primary";
+        b.textContent = "นำเข้าชีตปัจจุบัน";
+        b.addEventListener("click", async function () {
+          b.disabled = true;
+          const body = Object.assign({}, r, {
+            action: "manualSubmit", adminKey: key,
+            submitStatus: "นำเข้าจากลิงก์เก่า " + f.link + " (ส่งเดิม: " + (r.submitTime || r.timestamp || "-") + ")",
+            submissionMode: "นำเข้าจากลิงก์เก่า",
+            questionSet: r.questionSet || ""
+          });
+          const res = await postApps(body);
+          b.textContent = res && res.ok ? "✅ นำเข้าแล้ว (แถว " + res.row + ")" : "ไม่สำเร็จ: " + ((res && res.error) || "");
+          if (!(res && res.ok)) b.disabled = false;
+        });
+        td.appendChild(b);
+        tr.appendChild(td);
+        table.appendChild(tr);
+      });
+    }
+
     function renderDeviceProgress() {
       const box = $("deviceProgressList");
       if (!box) return;
@@ -4577,8 +5063,17 @@
       items.forEach(function (it) {
         const d = it.data || {};
         const started = (d.subjectStartedAt || []).filter(function (v) { return v != null; }).length;
+        const chars = (d.answers || []).map(function (a) { return String(a || "").length; });
+        const files = (d.attachments || []).reduce(function (n, l) { return n + (Array.isArray(l) ? l.length : 0); }, 0);
         const li = document.createElement("li");
-        li.innerHTML = "<span><strong>" + escapeHtml((d.fullName || "-") + " · " + (d.studentId || "-")) + "</strong> <span class='meta'>เริ่มแล้ว " + started + "/3 วิชา · บันทึกล่าสุด " + escapeHtml(d.lastSave || "-") + "</span></span>";
+        li.innerHTML = "<span><strong>" + escapeHtml((d.fullName || "-") + " · " + (d.studentId || "-")) + "</strong> <span class='meta'>เริ่มแล้ว " + started + "/3 วิชา · คำตอบ " + chars.join(" / ") + " ตัวอักษร · ไฟล์ " + files + " · บันทึกล่าสุด " + escapeHtml(d.lastSave || "-") +
+          (d.recoveredAt ? " · ✅ ส่งกู้คืนแล้ว " + escapeHtml(d.recoveredAt) : "") + "</span></span>";
+        const rec = document.createElement("button");
+        rec.type = "button";
+        rec.className = "btn small primary";
+        rec.textContent = d.recoveredAt ? "ส่งกู้คืนอีกครั้ง" : "ส่งคำตอบนี้เข้าชีต (กู้คืน)";
+        rec.addEventListener("click", function () { recoverStoredExam(it.key, d, rec); });
+        li.appendChild(rec);
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "btn small danger";
@@ -4595,6 +5090,117 @@
         ul.appendChild(li);
       });
       box.appendChild(ul);
+    }
+
+    function renderLateUpload() {
+      const open = config.lateUploadOpen !== false;
+      const form = $("lateUploadForm");
+      if (!form) return;
+      if (!open) {
+        form.innerHTML = "<p class='note'>ขณะนี้ปิดรับไฟล์คำตอบแล้ว หากมีข้อสงสัยกรุณาติดต่อเจ้าหน้าที่</p>";
+        return;
+      }
+      fillRosterSelect($("luPick"), ($("luSid") && $("luSid").value) || "");
+    }
+
+    async function sendLateUpload() {
+      const note = $("luNote");
+      const sid = ($("luSid").value || "").trim();
+      const name = ($("luName").value || "").trim();
+      const cat = Number($("luCat").value);
+      const files = Array.prototype.slice.call($("luFiles").files || []);
+      if (!/^\d{10}$/.test(sid) || !name) { note.className = "err"; note.textContent = "กรุณาเลือกชื่อ หรือกรอกรหัสนักศึกษา 10 หลักและชื่อ-นามสกุล"; return; }
+      if (!cat) { note.className = "err"; note.textContent = "กรุณาเลือกหมวดของคำตอบ"; return; }
+      if (!files.length) { note.className = "err"; note.textContent = "กรุณาเลือกไฟล์อย่างน้อย 1 ไฟล์"; return; }
+      const slot = subjectForCat(cat) || cat;
+      const q = config.questions.find(function (x) { return Number(x.cat) === cat; }) || {};
+      const btn = $("luSendBtn");
+      btn.disabled = true;
+      let ok = 0;
+      const errors = [];
+      for (const f of files) {
+        note.className = "note";
+        note.textContent = "กำลังส่ง " + f.name + " ...";
+        try {
+          const rec = await uploadFileToServer(f, {
+            studentId: sid, fullName: name, subject: slot, bankId: q.bankId || "",
+            subjectTitle: CATEGORIES[cat].titleTh, uploadedBy: name, role: "student",
+            note: "ส่งไฟล์กระดาษหลังสอบ (" + CATEGORIES[cat].titleTh + ")"
+          });
+          ok++;
+          const li = document.createElement("li");
+          li.innerHTML = "<span>✅ " + escapeHtml(rec.name) + " <span class='meta'>" + escapeHtml(CATEGORIES[cat].titleTh + " · " + rec.uploadedAt) + "</span></span>";
+          $("luDone").appendChild(li);
+        } catch (err) {
+          errors.push(f.name + ": " + String(err && err.message ? err.message : err));
+        }
+      }
+      $("luFiles").value = "";
+      note.className = errors.length ? "err" : "ok";
+      note.textContent = "ส่งสำเร็จ " + ok + " ไฟล์" + (errors.length ? " · ไม่สำเร็จ: " + errors.join("; ") : " · ส่งหมวดอื่นต่อได้โดยเปลี่ยนหมวดแล้วเลือกไฟล์ใหม่");
+      btn.disabled = false;
+    }
+
+    // One row per student: what exists for each category across all submissions, devices, drafts and files.
+    function renderStatusTable() {
+      const table = $("statusTable");
+      if (!table) return;
+      if (!centralMode) {
+        table.innerHTML = "<tr><td class='note'>เชื่อมต่อด้วยรหัสผู้ตรวจเพื่อดูสถานะ</td></tr>";
+        return;
+      }
+      const onlyMissing = $("statusOnlyMissing") && $("statusOnlyMissing").checked;
+      const ids = [];
+      const names = {};
+      (config.roster || []).forEach(function (r) { if (ids.indexOf(r.sid) === -1) ids.push(r.sid); names[r.sid] = r.name; });
+      centralSubmissions.concat(centralDrafts, centralFiles).forEach(function (r) {
+        const id = String(r.studentId || "");
+        if (!/^\d{10}$/.test(id) || /^0000/.test(id)) return;
+        if (ids.indexOf(id) === -1) ids.push(id);
+        if (!names[id] && r.fullName) names[id] = r.fullName;
+      });
+      table.innerHTML = "<tr><th>นิสิต</th><th>ส่ง</th><th>หมวด 1 ทฤษฎี</th><th>หมวด 2 ประยุกต์</th><th>หมวด 3 วิจัย</th><th>สิ่งที่ต้องทำ</th></tr>";
+      let shown = 0;
+      ids.forEach(function (id) {
+        const d = collectStudentAnswers(id);
+        const cells = [1, 2, 3].map(function (cat) {
+          const e = d.byCat[cat] || [];
+          const typed = e.reduce(function (m, x) { return Math.max(m, x.text.trim().length); }, 0);
+          const files = d.files.filter(function (f) { return f.cat === cat; }).length;
+          return { typed: typed, files: files, draft: e.length && e.every(function (x) { return x.isDraft; }) };
+        });
+        const missing = d.absent ? [] : [1, 2, 3].filter(function (c, i) { return !cells[i].typed && !cells[i].files; });
+        if (onlyMissing && !missing.length) return;
+        shown++;
+        let todo = "ครบ 3 หมวด" + (d.merged ? " (ฉบับรวม)" : "");
+        if (d.absent) todo = "ไม่มาสอบ";
+        else if (d.lost && missing.length) todo = "เข้าสอบแล้ว ข้อมูลคำตอบสูญหายจากระบบ: รอนิสิตส่งคำตอบย้อนหลัง/คณะกรรมการพิจารณา (หมวด " + missing.join(", ") + ")";
+        else if (d.paper) todo = missing.length ? "สอบแบบกระดาษ: รอไฟล์สแกนหมวด " + missing.join(", ") : "ครบ 3 หมวด (กระดาษ)";
+        else if (!d.rows.length && !d.files.length) todo = "ไม่มีข้อมูลในระบบ: กู้คืนจากเครื่องที่ใช้สอบ หรือให้ส่งไฟล์กระดาษ";
+        else if (missing.length) todo = "ขาดหมวด " + missing.join(", ") + ": กู้คืนจากเครื่อง หรือส่งไฟล์กระดาษ";
+        if (cells.some(function (c) { return c.draft; })) todo += " · มีร่างที่ยังไม่ได้กดส่ง";
+        const devices = [];
+        d.subs.forEach(function (r) { if (r.device && devices.indexOf(r.device) === -1) devices.push(r.device); });
+        const tr = document.createElement("tr");
+        const cellHtml = cells.map(function (c) {
+          if (d.absent) return "<td class='meta'>—</td>";
+          if (!c.typed && !c.files) return "<td style='color:var(--danger);font-weight:600'>❌</td>";
+          return "<td>" + (c.typed ? "✍️ " + c.typed.toLocaleString() : "") + (c.files ? " 📎 " + c.files : "") + (c.draft ? " (ร่าง)" : "") + "</td>";
+        }).join("");
+        tr.innerHTML = "<td><a href='#' class='status-open'>" + escapeHtml((names[id] || "") + " · " + id) + "</a></td><td>" + (d.absent ? "—" : d.merged ? "ฉบับรวม<br><span class='meta'>จาก " + mergedSources(d.merged).length + " ครั้ง</span>" : d.subs.length + " ครั้ง") + (devices.length > 1 ? "<br><span class='meta'>" + escapeHtml(devices.join(", ")) + "</span>" : "") + "</td>" + cellHtml +
+          "<td" + (d.absent ? " class='meta'" : missing.length ? " style='color:var(--danger)'" : " style='color:var(--ok-ink)'") + ">" + escapeHtml(todo) + "</td>";
+        tr.querySelector(".status-open").addEventListener("click", function (ev) {
+          ev.preventDefault();
+          const subs = d.subs.length ? d.subs : d.drafts;
+          selectedSubmission = subs.length ? subs[subs.length - 1] : null;
+          $("gradeSid").value = id;
+          $("gradeFullName").value = names[id] || "";
+          renderAnswerPane();
+          if ($("answerPaneCard")) $("answerPaneCard").scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+        table.appendChild(tr);
+      });
+      if (!shown) table.innerHTML += "<tr><td colspan='6' class='note'>นิสิตทุกคนมีคำตอบครบทั้ง 3 หมวดแล้ว</td></tr>";
     }
 
     function renderManualSubjects() {
@@ -4709,7 +5315,7 @@
       const wrap = $("submissionPickWrap");
       const sel = $("submissionPick");
       if (!wrap || !sel) return;
-      const has = centralMode && centralSubmissions.length;
+      const has = centralMode && (centralSubmissions.length || centralDrafts.length);
       wrap.classList.toggle("hidden", !has);
       if (!has) return;
       const cur = sel.value;
@@ -4720,6 +5326,17 @@
         opt.textContent = submissionMeta(s);
         sel.appendChild(opt);
       });
+      if (centralDrafts.length) {
+        const grp = document.createElement("optgroup");
+        grp.label = "ร่างคำตอบที่ยังไม่ได้กดส่ง (สำรองอัตโนมัติ)";
+        centralDrafts.forEach(function (d, i) {
+          const opt = document.createElement("option");
+          opt.value = "d" + i;
+          opt.textContent = "⚠ " + [d.fullName, d.studentId].filter(Boolean).join(" · ") + " · ร่างล่าสุด " + (d.timestamp || "");
+          grp.appendChild(opt);
+        });
+        sel.appendChild(grp);
+      }
       if (cur) sel.value = cur;
     }
 
@@ -5081,16 +5698,47 @@
       const data = await fetchPublishedConfig();
       if (data) serverGraderCount = data.graderCount;
       if (data && !data.config && Array.isArray(data.graderNames) && data.graderNames.length) config.graderNames = data.graderNames;
+      if (data && !data.config && Array.isArray(data.graderGroups) && data.graderGroups.length) config.graderGroups = data.graderGroups;
       renderGraderNames();
       if (!data || !data.config) return;
       try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(data.config)); } catch (err) {}
       config = mergeConfig(data.config);
       if (Array.isArray(data.graderNames) && data.graderNames.length) config.graderNames = data.graderNames;
+      if (Array.isArray(data.graderGroups) && data.graderGroups.length) config.graderGroups = data.graderGroups;
       serverGraderCount = data.graderCount;
       applyTheme();
       applyLogos();
       renderGraderNames();
       if (!isStaffRoute()) renderStudent();
+    }
+
+    const OLD_SCRIPT_HELP = "เว็บแอป Apps Script ที่ Deploy อยู่ยังเป็นโค้ดรุ่นเก่า (โค้ดใหม่อยู่ในหน้าแก้ไขแล้ว แต่ยังไม่ได้ Deploy)\n" +
+      "วิธีแก้: Apps Script → Deploy → Manage deployments → กดดินสอ ✏️ → ช่อง Version เลือก \"New version\" → Deploy\n" +
+      "และตรวจว่าในโปรเจกต์ไม่มีไฟล์ .gs เก่าอีกไฟล์ที่มี function doPost ซ้ำ (ให้เหลือ Code.gs กับ ตั้งรหัสผู้ตรวจ เท่านั้น)";
+
+    async function checkServer() {
+      const out = $("serverCheckNote");
+      if (out) out.textContent = "กำลังตรวจ...";
+      const lines = [];
+      try {
+        const cfg = await postApps({ action: "getConfig" });
+        if (!cfg || !cfg.ok || cfg.version == null) {
+          lines.push("❌ " + OLD_SCRIPT_HELP);
+          if (cfg && cfg.error) lines.push("(เซิร์ฟเวอร์ตอบ: " + cfg.error + ")");
+        } else {
+          lines.push("✅ Apps Script รุ่น " + cfg.version + " ทำงานอยู่");
+          lines.push(cfg.graderCount ? "✅ ตั้งรหัสผู้ตรวจแล้ว " + cfg.graderCount + " ท่าน" : "⚠ ยังไม่ได้ตั้งรหัสผู้ตรวจ: รันฟังก์ชัน setGraders หนึ่งครั้ง");
+          lines.push(cfg.config ? "✅ มีการตั้งค่าที่เผยแพร่แล้ว เมื่อ " + (cfg.updatedAt || "-") : "ℹ ยังไม่เคยเผยแพร่การตั้งค่า");
+          const key = ($("publishKey") && $("publishKey").value.trim()) || "";
+          if (key) {
+            const who = await postApps({ action: "getConfig", adminKey: key });
+            lines.push(who && Array.isArray(who.graders) ? "✅ ADMIN_KEY ที่กรอกถูกต้อง" : "❌ ADMIN_KEY ที่กรอกไม่ตรงกับค่าใน Script properties ของ Apps Script");
+          }
+        }
+      } catch (err) {
+        lines.push("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + String(err && err.message ? err.message : err));
+      }
+      if (out) out.textContent = lines.join("\n");
     }
 
     async function publishConfig() {
@@ -5114,7 +5762,9 @@
           try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(publicConfig())); } catch (err) {}
           if (note) note.textContent = "เผยแพร่แล้ว " + (data.updatedAt || fmtNow()) + " · โจทย์: " + questionSetLabel() + " · นิสิตที่เปิดหน้าสอบใหม่จะได้ค่านี้";
         } else {
-          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + ((data && data.error) || "ไม่ทราบสาเหตุ");
+          const e = (data && data.error) || "ไม่ทราบสาเหตุ";
+          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + e;
+          checkServer();
         }
       } catch (err) {
         if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + String(err && err.message ? err.message : err);
@@ -5180,6 +5830,14 @@
       });
       $("enterExamBtn").addEventListener("click", enterExamRoom);
       if ($("backHomeBtn")) $("backHomeBtn").addEventListener("click", exitExamRoom);
+      if ($("lateUploadOpenBtn")) $("lateUploadOpenBtn").addEventListener("click", () => { location.hash = "upload"; });
+      if ($("uploadHomeBtn")) $("uploadHomeBtn").addEventListener("click", () => { location.hash = ""; });
+      if ($("luPick")) $("luPick").addEventListener("change", () => { onRosterPick("luPick", "luSid", "luName"); });
+      if ($("luSid")) $("luSid").addEventListener("input", () => { $("luSid").value = $("luSid").value.replace(/\D/g, "").slice(0, 10); });
+      if ($("luSendBtn")) $("luSendBtn").addEventListener("click", () => { sendLateUpload(); });
+      if ($("statusOnlyMissing")) $("statusOnlyMissing").addEventListener("change", renderStatusTable);
+      if ($("oldLinkBtn")) $("oldLinkBtn").addEventListener("click", () => { searchOldLinks(); });
+      if ($("lateUploadToggle")) $("lateUploadToggle").addEventListener("change", () => { config.lateUploadOpen = $("lateUploadToggle").checked; });
       if ($("committeeHomeBtn")) $("committeeHomeBtn").addEventListener("click", () => { location.hash = ""; });
       if ($("whoEye")) $("whoEye").addEventListener("click", () => {
         $("whoEye").dataset.shown = $("whoEye").dataset.shown === "1" ? "" : "1";
@@ -5219,6 +5877,7 @@
       if ($("guideEn")) $("guideEn").addEventListener("input", () => { config.guide.en = $("guideEn").value; });
       if ($("guideResetBtn")) $("guideResetBtn").addEventListener("click", () => { config.guide = defaultGuide(); renderAdmin(); });
       if ($("publishBtn")) $("publishBtn").addEventListener("click", () => { publishConfig(); });
+      if ($("serverCheckBtn")) $("serverCheckBtn").addEventListener("click", () => { checkServer(); });
       if ($("pullConfigBtn")) $("pullConfigBtn").addEventListener("click", () => { pullPublishedConfig(); });
       if ($("gradeRefreshBtn")) $("gradeRefreshBtn").addEventListener("click", () => { refreshCentral(); });
       if ($("manSubmitBtn")) $("manSubmitBtn").addEventListener("click", () => { submitManual(); });
@@ -5267,8 +5926,19 @@
         }
       });
 
+      // An admin reset in another tab removes this exam's saved progress: drop it here too,
+      // so this tab does not write it back on its next autosave.
+      window.addEventListener("storage", (e) => {
+        if (!state.entered || isStaffRoute()) return;
+        const key = progressKeyFor(currentStudentId(), state.sessionId);
+        if (e.key === key && e.newValue === null) {
+          resetExamState();
+          renderStudent();
+          showToast(state.lang === "en" ? "This exam was reset by the administrator." : "แอดมินรีเซ็ตการสอบในเครื่องนี้แล้ว");
+        }
+      });
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") persistProgress();
+        if (document.visibilityState === "hidden") { persistProgress(); sendDraft(false); }
       });
       window.addEventListener("beforeunload", () => { persistProgress(); });
       window.addEventListener("pagehide", () => { persistProgress(); });
@@ -5323,9 +5993,10 @@
         renderAnswerPane();
       });
       if ($("submissionPick")) $("submissionPick").addEventListener("change", () => {
-        const i = Number($("submissionPick").value);
-        if (isNaN(i) || !centralSubmissions[i]) return;
-        selectedSubmission = centralSubmissions[i];
+        const v = $("submissionPick").value;
+        const pick = v.charAt(0) === "d" ? centralDrafts[Number(v.slice(1))] : centralSubmissions[Number(v)];
+        if (!v || !pick) return;
+        selectedSubmission = pick;
         $("gradeSid").value = selectedSubmission.studentId || "";
         $("gradeFullName").value = selectedSubmission.fullName || "";
         renderAnswerPane();
@@ -5395,6 +6066,11 @@
           if (remainingSec(i) <= 0) logOvertime(i);
         }
         updateTimerUI();
+        draftTick++;
+        if (draftTick >= DRAFT_EVERY_SEC) {
+          draftTick = 0;
+          sendDraft(false);
+        }
       }, 1000);
     }
 
