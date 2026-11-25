@@ -970,10 +970,8 @@
           <button type="button" class="btn" id="saveAdmin">บันทึกในเครื่องนี้</button>
           <button type="button" class="btn" id="pullConfigBtn">โหลดค่าที่เผยแพร่อยู่</button>
           <button type="button" class="btn" id="resetAll">รีเซ็ตเป็นค่าเริ่มต้น</button>
-          <button type="button" class="btn" id="serverCheckBtn">ตรวจสถานะเซิร์ฟเวอร์</button>
         </div>
         <p class="note" id="adminSaveNote"></p>
-        <div class="note" id="serverCheckNote" style="white-space:pre-wrap"></div>
       </section>
       </div>
       <div id="adminGradeTab" class="hidden">
@@ -1212,7 +1210,7 @@
     const PROGRESS_POINTER = "qe-exam-progress-current";
     const DEFAULT_DURATIONS = [150, 120, 110];
     // Paste the deployed Google Apps Script web app URL here. Leave as PASTE_WEB_APP_URL to preview only.
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxM9O0Pvcd6xM5NY_s-YrF_tQYP7a-zwLzbLxYo_gqgKcfCSyFnxAzV4zdUiwCMBB5o/exec";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxHB6dGtNax8jONoOKKcmynELxzLn5MLfZZmMH78VT27fhjncOeF6WYimvilDBvZTc/exec";
 
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/1hAefq4bojIkXTfHFaUu4E454KKGKEnj0yXf1ArxsW5U/edit";
     const MAX_UPLOAD_MB = 10;
@@ -1722,14 +1720,8 @@
           return merged;
         }
         const duration = Number(q.durationMin);
-        const bank = bankById(q.bankId);
-        const cat = Number(q.cat) || bank.cat;
-        const c = CATEGORIES[cat] || CATEGORIES[bank.cat];
+        const cat = Number(q.cat) || bankById(q.bankId).cat;
         return Object.assign({}, def, q, {
-          th: q.th && String(q.th).trim() ? q.th : bank.th,
-          en: q.en && String(q.en).trim() ? q.en : bank.en,
-          titleTh: q.titleTh && String(q.titleTh).trim() ? q.titleTh : c.titleTh,
-          titleEn: q.titleEn && String(q.titleEn).trim() ? q.titleEn : c.titleEn,
           cat: cat,
           durationMin: duration > 0 ? duration : def.durationMin,
           points: q.points != null && q.points !== "" ? Number(q.points) : CATEGORIES[cat].points
@@ -1969,61 +1961,9 @@
         const pill = $("savePill");
         if (pill) {
           const clock = fmtClock(Date.now());
-          pill.textContent = fmt(t().autosavedAt || t().savedAt, { t: clock }) + draftSuffix();
+          pill.textContent = fmt(t().autosavedAt || t().savedAt, { t: clock });
         }
       } catch (err) {}
-    }
-
-    // Online backup of the answers in progress (sheet tab "ร่างคำตอบ"), so nothing is lost if this device fails.
-    const DRAFT_EVERY_SEC = 60;
-    let draftTick = 0;
-    let lastDraftSig = "";
-    let draftInFlight = false;
-
-    function draftSuffix() {
-      if (!state.lastDraftAt) return "";
-      return (state.lang === "en" ? " · online backup " : " · สำรองออนไลน์ ") + state.lastDraftAt;
-    }
-
-    function draftPayload() {
-      return {
-        action: "draft",
-        studentId: currentStudentId(),
-        fullName: $("fullName").value.trim(),
-        sessionId: state.sessionId,
-        status: "กำลังสอบ",
-        currentSubject: String(state.q + 1),
-        question1: state.answers[0],
-        question2: state.answers[1],
-        question3: state.answers[2],
-        questionSet: questionSetLabel(),
-        attachments: attachmentsLabel(),
-        violationCount: String(state.pasteAttempts),
-        startedAt: state.startedAt || ""
-      };
-    }
-
-    async function sendDraft(force) {
-      if (!isAppsScriptConfigured() || !state.entered || state.submitted || isStaffRoute()) return;
-      if (!/^\d{10}$/.test(currentStudentId()) || !anySubjectStarted()) return;
-      const payload = draftPayload();
-      const sig = JSON.stringify([payload.question1, payload.question2, payload.question3, payload.attachments, payload.currentSubject, payload.violationCount]);
-      if (!force && sig === lastDraftSig) return;
-      if (draftInFlight) return;
-      draftInFlight = true;
-      try {
-        const res = await postApps(payload);
-        if (res && res.ok) {
-          lastDraftSig = sig;
-          state.lastDraftAt = fmtClock(Date.now()).slice(0, 5);
-          const pill = $("savePill");
-          if (pill && state.lastSave) pill.textContent = fmt(t().autosavedAt || t().savedAt, { t: state.lastSave.slice(-8) }) + draftSuffix();
-        }
-      } catch (err) {
-        // offline: answers are still saved on this device; the next tick retries
-      } finally {
-        draftInFlight = false;
-      }
     }
 
     function scheduleSave() {
@@ -2264,7 +2204,6 @@
       const cq = config.questions[i] || {};
       state.lockedQ[i] = { bankId: cq.bankId || "", cat: cq.cat || null, th: cq.th || "", en: cq.en || "", titleTh: cq.titleTh || "", titleEn: cq.titleEn || "" };
       if (!state.startedAt) state.startedAt = fmtNow();
-      setTimeout(function () { sendDraft(true); }, 0);
       if (i === 0) {
         const clock = fmtClock(state.subjectStartedAt[i]);
         $("startTime").value = clock.slice(0, 5);
@@ -2306,7 +2245,6 @@
       state.subjectFinished[state.q] = true;
       if (state.maxReached < state.q + 1) state.maxReached = state.q + 1;
       persistProgress();
-      sendDraft(true);
       enterSubject(state.q + 1);
     }
 
@@ -2319,7 +2257,6 @@
       $("confirmTitle").textContent = title;
       $("confirmBody").textContent = body;
       $("confirmOk").textContent = okText;
-      $("confirmOk").disabled = false;
       $("confirmOk").classList.remove("danger");
       $("confirmCancel").classList.add("hidden");
       $("confirmOverlay").classList.add("show");
@@ -2334,32 +2271,17 @@
         return;
       }
       clearProgress();
-      resetExamState();
-      renderStudent();
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    function resetExamState() {
-      if (state.saveTimer) { clearTimeout(state.saveTimer); state.saveTimer = null; }
       state.entered = false;
-      state.submitted = false;
       state.q = 0;
       state.maxReached = 0;
       state.answers = ["", "", ""];
       state.attachments = [[], [], []];
       state.lockedQ = [null, null, null];
-      state.subjectStartedAt = [null, null, null];
       state.subjectFinished = [false, false, false];
-      state.subjectOvertimeMin = [null, null, null];
-      state.overtimeWarned = [false, false, false];
-      state.pasteLog = [];
-      state.pasteAttempts = 0;
       state.lastSave = "";
-      state.lastDraftAt = "";
-      state.sessionId = "QE-2569-S-" + Math.random().toString(36).slice(2, 8).toUpperCase();
       if ($("guideDetails")) $("guideDetails").open = true;
-      if ($("result")) $("result").innerHTML = "";
-      if ($("submitBtn")) $("submitBtn").disabled = false;
+      renderStudent();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
     function enterExamRoom() {
@@ -2428,7 +2350,7 @@
       }
       if (state.lastSave) {
         const clock = state.lastSave.slice(-8);
-        $("savePill").textContent = fmt(L.autosavedAt || L.savedAt, { t: clock }) + draftSuffix();
+        $("savePill").textContent = fmt(L.autosavedAt || L.savedAt, { t: clock });
       } else {
         $("savePill").textContent = L.notSaved;
       }
@@ -2721,7 +2643,7 @@
       if (started) growAnswer();
       const wc = wordCount(started ? state.answers[state.q] : "");
       $("countMeta").textContent = fmt(L.wordsChars, wc);
-      $("pasteMeta").textContent = fmt(L.pasteMeta, { n: pasteOnlyCount() });
+      $("pasteMeta").textContent = fmt(L.pasteMeta, { n: state.pasteAttempts });
       const isLast = state.q === total - 1;
       $("submitCard").classList.toggle("hidden", !isLast);
       $("submitWrap").classList.toggle("hidden", !isLast);
@@ -2830,16 +2752,11 @@
       el.classList.add("show");
     }
 
-    // Paste attempts only (paste, drop, Shift+Insert); right-click and copy/cut count as other violations.
-    function pasteOnlyCount() {
-      return state.pasteLog.filter(function (l) { return /(^|\s)(paste|drop|keydown-paste|shift-insert|insertFromPaste|insertFromDrop)/.test(l); }).length;
-    }
-
     function markPaste(reason) {
       state.pasteAttempts += 1;
       state.pasteLog.push(fmtNow() + " " + reason);
       renderPasteBanner();
-      $("pasteMeta").textContent = fmt(t().pasteMeta, { n: pasteOnlyCount() });
+      $("pasteMeta").textContent = fmt(t().pasteMeta, { n: state.pasteAttempts });
       scheduleSave();
     }
 
@@ -2947,7 +2864,7 @@
         submitTime: submitTime || "",
         violationCount: String(state.pasteAttempts),
         violationLog: logParts.join("; "),
-        pasteAttempts: String(pasteOnlyCount()),
+        pasteAttempts: String(state.pasteAttempts),
         sessionId: state.sessionId,
         device: deviceLabel(),
         screen: window.innerWidth + "×" + window.innerHeight,
@@ -3333,7 +3250,6 @@
       centralFiles = [];
       centralFolderUrl = "";
       centralGrades = [];
-      centralDrafts = [];
       centralRole = "";
       centralName = "";
       editingSheetGrade = null;
@@ -3671,7 +3587,6 @@
     let centralFiles = [];
     let centralFolderUrl = "";
     let centralGrades = [];
-    let centralDrafts = [];
     let centralRole = "";
     let centralName = "";
     let editingSheetGrade = null;
@@ -4173,20 +4088,6 @@
 
     function captureCentralGrades(data) {
       centralGrades = Array.isArray(data.grades) ? data.grades : [];
-      // Drafts of exams that were never submitted are shown to graders as "ร่าง (ยังไม่ส่ง)".
-      const sent = {};
-      centralSubmissions.forEach(function (s) { if (s.sessionId) sent[s.sessionId] = true; });
-      centralDrafts = (Array.isArray(data.drafts) ? data.drafts : []).filter(function (d) {
-        return d.sessionId && !sent[d.sessionId] && String(d.status || "").indexOf("ส่งแล้ว") !== 0;
-      }).map(function (d) {
-        return normalizeSubmission(Object.assign({}, d, {
-          submissionMode: "ร่าง (ยังไม่ส่ง) บันทึกล่าสุด " + (d.timestamp || ""),
-          submitStatus: "ยังไม่ส่ง",
-          submitTime: "",
-          isDraft: true
-        }));
-      });
-      setTimeout(renderSubmissionPick, 0);
       centralRole = (data.grader && data.grader.role) || "";
       centralName = (data.grader && data.grader.name) || "";
       setTimeout(renderSheetGrades, 0);
@@ -4407,10 +4308,6 @@
       if (!sub && sid) {
         const list = submissionsForStudent(sid);
         sub = list.length ? list[list.length - 1] : null;
-        if (!sub) {
-          const drafts = centralDrafts.filter(function (d) { return String(d.studentId) === sid; });
-          sub = drafts.length ? drafts[drafts.length - 1] : null;
-        }
       }
       const studentId = sub ? sub.studentId : sid;
       const files = studentId ? filesForStudent(studentId) : [];
@@ -4424,13 +4321,6 @@
       head.innerHTML = "<p class='note'>" + escapeHtml(sub ? submissionMeta(sub) : ("รหัส " + studentId + " · มีเฉพาะไฟล์แนบ")) + "</p>";
       const others = studentId ? submissionsForStudent(studentId).length : 0;
       if (others > 1) head.innerHTML += "<p class='note'>นิสิตคนนี้มีการส่ง " + others + " ครั้งในชีต (แสดงครั้งที่เลือก/ล่าสุด)</p>";
-      if (sub && sub.isDraft) {
-        const warn = document.createElement("p");
-        warn.className = "banner show";
-        warn.style.display = "block";
-        warn.textContent = "⚠ นิสิตยังไม่ได้กดส่งคำตอบ ที่แสดงคือร่างที่ระบบสำรองอัตโนมัติล่าสุดเมื่อ " + (sub.timestamp || "-") + " (วิชาที่กำลังทำ: " + (sub.currentSubject || "-") + ")";
-        box.appendChild(warn);
-      }
       box.appendChild(head);
       [1, 2, 3].forEach(function (n) {
         if (subj !== "overall" && String(n) !== String(subj)) return;
@@ -4819,7 +4709,7 @@
       const wrap = $("submissionPickWrap");
       const sel = $("submissionPick");
       if (!wrap || !sel) return;
-      const has = centralMode && (centralSubmissions.length || centralDrafts.length);
+      const has = centralMode && centralSubmissions.length;
       wrap.classList.toggle("hidden", !has);
       if (!has) return;
       const cur = sel.value;
@@ -4830,17 +4720,6 @@
         opt.textContent = submissionMeta(s);
         sel.appendChild(opt);
       });
-      if (centralDrafts.length) {
-        const grp = document.createElement("optgroup");
-        grp.label = "ร่างคำตอบที่ยังไม่ได้กดส่ง (สำรองอัตโนมัติ)";
-        centralDrafts.forEach(function (d, i) {
-          const opt = document.createElement("option");
-          opt.value = "d" + i;
-          opt.textContent = "⚠ " + [d.fullName, d.studentId].filter(Boolean).join(" · ") + " · ร่างล่าสุด " + (d.timestamp || "");
-          grp.appendChild(opt);
-        });
-        sel.appendChild(grp);
-      }
       if (cur) sel.value = cur;
     }
 
@@ -5214,35 +5093,6 @@
       if (!isStaffRoute()) renderStudent();
     }
 
-    const OLD_SCRIPT_HELP = "เว็บแอป Apps Script ที่ Deploy อยู่ยังเป็นโค้ดรุ่นเก่า (โค้ดใหม่อยู่ในหน้าแก้ไขแล้ว แต่ยังไม่ได้ Deploy)\n" +
-      "วิธีแก้: Apps Script → Deploy → Manage deployments → กดดินสอ ✏️ → ช่อง Version เลือก \"New version\" → Deploy\n" +
-      "และตรวจว่าในโปรเจกต์ไม่มีไฟล์ .gs เก่าอีกไฟล์ที่มี function doPost ซ้ำ (ให้เหลือ Code.gs กับ ตั้งรหัสผู้ตรวจ เท่านั้น)";
-
-    async function checkServer() {
-      const out = $("serverCheckNote");
-      if (out) out.textContent = "กำลังตรวจ...";
-      const lines = [];
-      try {
-        const cfg = await postApps({ action: "getConfig" });
-        if (!cfg || !cfg.ok || cfg.version == null) {
-          lines.push("❌ " + OLD_SCRIPT_HELP);
-          if (cfg && cfg.error) lines.push("(เซิร์ฟเวอร์ตอบ: " + cfg.error + ")");
-        } else {
-          lines.push("✅ Apps Script รุ่น " + cfg.version + " ทำงานอยู่");
-          lines.push(cfg.graderCount ? "✅ ตั้งรหัสผู้ตรวจแล้ว " + cfg.graderCount + " ท่าน" : "⚠ ยังไม่ได้ตั้งรหัสผู้ตรวจ: รันฟังก์ชัน setGraders หนึ่งครั้ง");
-          lines.push(cfg.config ? "✅ มีการตั้งค่าที่เผยแพร่แล้ว เมื่อ " + (cfg.updatedAt || "-") : "ℹ ยังไม่เคยเผยแพร่การตั้งค่า");
-          const key = ($("publishKey") && $("publishKey").value.trim()) || "";
-          if (key) {
-            const who = await postApps({ action: "getConfig", adminKey: key });
-            lines.push(who && Array.isArray(who.graders) ? "✅ ADMIN_KEY ที่กรอกถูกต้อง" : "❌ ADMIN_KEY ที่กรอกไม่ตรงกับค่าใน Script properties ของ Apps Script");
-          }
-        }
-      } catch (err) {
-        lines.push("❌ เชื่อมต่อเซิร์ฟเวอร์ไม่ได้: " + String(err && err.message ? err.message : err));
-      }
-      if (out) out.textContent = lines.join("\n");
-    }
-
     async function publishConfig() {
       const note = $("adminSaveNote");
       const key = ($("publishKey") && $("publishKey").value.trim()) || getCommitteeKey();
@@ -5264,9 +5114,7 @@
           try { localStorage.setItem(CONFIG_CACHE_KEY, JSON.stringify(publicConfig())); } catch (err) {}
           if (note) note.textContent = "เผยแพร่แล้ว " + (data.updatedAt || fmtNow()) + " · โจทย์: " + questionSetLabel() + " · นิสิตที่เปิดหน้าสอบใหม่จะได้ค่านี้";
         } else {
-          const e = (data && data.error) || "ไม่ทราบสาเหตุ";
-          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + e;
-          checkServer();
+          if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + ((data && data.error) || "ไม่ทราบสาเหตุ");
         }
       } catch (err) {
         if (note) note.textContent = "เผยแพร่ไม่สำเร็จ: " + String(err && err.message ? err.message : err);
@@ -5371,7 +5219,6 @@
       if ($("guideEn")) $("guideEn").addEventListener("input", () => { config.guide.en = $("guideEn").value; });
       if ($("guideResetBtn")) $("guideResetBtn").addEventListener("click", () => { config.guide = defaultGuide(); renderAdmin(); });
       if ($("publishBtn")) $("publishBtn").addEventListener("click", () => { publishConfig(); });
-      if ($("serverCheckBtn")) $("serverCheckBtn").addEventListener("click", () => { checkServer(); });
       if ($("pullConfigBtn")) $("pullConfigBtn").addEventListener("click", () => { pullPublishedConfig(); });
       if ($("gradeRefreshBtn")) $("gradeRefreshBtn").addEventListener("click", () => { refreshCentral(); });
       if ($("manSubmitBtn")) $("manSubmitBtn").addEventListener("click", () => { submitManual(); });
@@ -5420,19 +5267,8 @@
         }
       });
 
-      // An admin reset in another tab removes this exam's saved progress: drop it here too,
-      // so this tab does not write it back on its next autosave.
-      window.addEventListener("storage", (e) => {
-        if (!state.entered || isStaffRoute()) return;
-        const key = progressKeyFor(currentStudentId(), state.sessionId);
-        if (e.key === key && e.newValue === null) {
-          resetExamState();
-          renderStudent();
-          showToast(state.lang === "en" ? "This exam was reset by the administrator." : "แอดมินรีเซ็ตการสอบในเครื่องนี้แล้ว");
-        }
-      });
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "hidden") { persistProgress(); sendDraft(false); }
+        if (document.visibilityState === "hidden") persistProgress();
       });
       window.addEventListener("beforeunload", () => { persistProgress(); });
       window.addEventListener("pagehide", () => { persistProgress(); });
@@ -5487,10 +5323,9 @@
         renderAnswerPane();
       });
       if ($("submissionPick")) $("submissionPick").addEventListener("change", () => {
-        const v = $("submissionPick").value;
-        const pick = v.charAt(0) === "d" ? centralDrafts[Number(v.slice(1))] : centralSubmissions[Number(v)];
-        if (!v || !pick) return;
-        selectedSubmission = pick;
+        const i = Number($("submissionPick").value);
+        if (isNaN(i) || !centralSubmissions[i]) return;
+        selectedSubmission = centralSubmissions[i];
         $("gradeSid").value = selectedSubmission.studentId || "";
         $("gradeFullName").value = selectedSubmission.fullName || "";
         renderAnswerPane();
@@ -5560,11 +5395,6 @@
           if (remainingSec(i) <= 0) logOvertime(i);
         }
         updateTimerUI();
-        draftTick++;
-        if (draftTick >= DRAFT_EVERY_SEC) {
-          draftTick = 0;
-          sendDraft(false);
-        }
       }, 1000);
     }
 
