@@ -3965,6 +3965,19 @@
       }, 0);
       const oral = ($("gradeOralPass") && $("gradeOralPass").value) || "na";
       const ethics = ($("gradeEthics") && $("gradeEthics").value) || "ok";
+      const subj = ($("gradeSubject") && $("gradeSubject").value) || "overall";
+      if (subj !== "overall") {
+        // ให้คะแนนรายวิชา/หมวด: เทียบกับเกณฑ์ที่ให้คะแนนจริงเท่านั้น ผลผ่าน/ไม่ผ่านของ QE ตัดสินที่ภาพรวม (ข้อ 5.4)
+        const sv = subjectVerdict(gradeScores, ethics);
+        return {
+          categories: cats.map(function (c) { return c.filled ? c : Object.assign({}, c, { passed: true, skipped: true }); }),
+          total: sv.total,
+          totalMax: sv.max,
+          oral: "na",
+          ethics: ethics,
+          verdict: sv.verdict
+        };
+      }
       return {
         categories: cats,
         total: roundScore(total),
@@ -3973,6 +3986,27 @@
         ethics: ethics,
         verdict: decideVerdict(roundScore(total), cats, oral, ethics)
       };
+    }
+
+    // ผลของการให้คะแนนรายวิชา: ร้อยละของคะแนนเต็มของเกณฑ์ที่ให้คะแนน เทียบเกณฑ์ขั้นต่ำรายหมวด 60% (ข้อ 5.4)
+    function subjectVerdict(scoreMap, ethics) {
+      let total = 0, max = 0;
+      (rubricConfig.criteria || []).forEach(function (c) {
+        const raw = scoreMap ? scoreMap[c.id] : null;
+        const v = clampScore(raw && typeof raw === "object" ? raw.score : raw, criterionMax(c));
+        if (v == null) return;
+        total += v; max += criterionMax(c);
+      });
+      total = roundScore(total);
+      const minPct = Number(rubricConfig.thresholds.categoryMinPercent) || 60;
+      const pct = max > 0 ? Math.round(total / max * 1000) / 10 : 0;
+      const note = "ผลผ่าน/ไม่ผ่านของการสอบ QE ตัดสินจากคะแนนภาพรวมทุกหมวดรวมการสอบปากเปล่า (ข้อ 5.1, 5.4)";
+      let verdict;
+      if (!max) verdict = { code: "conditional", labelTh: "ยังไม่ได้ให้คะแนน", labelEn: "Not scored", reasons: [note] };
+      else if (ethics === "fail") verdict = { code: "fail", labelTh: "มีข้อบกพร่องด้านจริยธรรม (" + pct + "%)", labelEn: "Ethics issue (" + pct + "%)", reasons: ["มีข้อบกพร่องร้ายแรงด้านจริยธรรมการวิจัยหรือความซื่อสัตย์ทางวิชาการ (ข้อ 5.4)", note] };
+      else if (pct >= minPct) verdict = { code: "pass", labelTh: "ผ่านเกณฑ์ขั้นต่ำของหมวด (" + pct + "%)", labelEn: "Meets category minimum (" + pct + "%)", reasons: ["ได้ " + total + " จาก " + max + " = " + pct + "% ไม่น้อยกว่า " + minPct + "% (ข้อ 5.4)", note] };
+      else verdict = { code: "fail", labelTh: "ต่ำกว่าเกณฑ์ขั้นต่ำของหมวด (" + pct + "%)", labelEn: "Below category minimum (" + pct + "%)", reasons: ["ได้ " + total + " จาก " + max + " = " + pct + "% ต่ำกว่า " + minPct + "% (ข้อ 5.4)", note] };
+      return { total: total, max: max, pct: pct, verdict: verdict };
     }
 
     function decideVerdict(total, categories, oral, ethics) {
@@ -4176,6 +4210,7 @@
         const el = $("catSub-" + c.cat.id);
         if (!el) return;
         const ok = c.passed;
+        if (c.skipped) { el.className = "rubric-subtotal"; el.textContent = "ไม่ได้ให้คะแนนในวิชานี้"; return; }
         el.className = "rubric-subtotal " + (ok ? "ok" : "fail");
         el.textContent = "รวมหมวด " + c.score + " / " + c.max + " · ขั้นต่ำ " + c.min + " · " + (ok ? "ผ่านเกณฑ์ขั้นต่ำ" : "ไม่ผ่านเกณฑ์ขั้นต่ำ");
       });
@@ -4204,6 +4239,7 @@
       const catBox = document.createElement("div");
       catBox.className = "grade-cat-checks";
       st.categories.forEach(function (c) {
+        if (c.skipped) return;
         const p = document.createElement("p");
         p.className = c.passed ? "ok-line" : "fail-line";
         p.textContent = rubricName(c.cat, "name") + ": " + c.score + "/" + c.max + (c.passed ? " ผ่านขั้นต่ำ" : " ไม่ผ่านขั้นต่ำ");
@@ -4249,7 +4285,7 @@
         totalMax: st.totalMax,
         verdict: st.verdict.code,
         verdictLabel: st.verdict.labelTh,
-        categoryChecks: st.categories.map(function (c) {
+        categoryChecks: st.categories.filter(function (c) { return !c.skipped; }).map(function (c) {
           return { id: c.cat.id, name: c.cat.nameTh, score: c.score, max: c.max, min: c.min, passed: c.passed };
         }),
         rubricSource: rubricConfig.source
@@ -4704,8 +4740,13 @@
       rows.forEach(function (r) {
         const tr = document.createElement("tr");
         const edited = r.editedAt ? "<br><span class='meta'>แก้ " + escapeHtml(r.editedAt + " โดย " + r.editedBy) + "</span>" : "";
+        let showTotal = r.total || "", showVerdict = r.verdict || "";
+        if (/^(วิชาที่|Subject)\s*\d/.test(String(r.subject || ""))) {
+          const sv = subjectVerdict(parseJsonSafe(r.criterionScores, {}), r.ethicsOk);
+          if (sv.max) { showTotal = sv.total + " / " + sv.max; showVerdict = sv.verdict.labelTh; }
+        }
         tr.innerHTML = "<td>" + escapeHtml((r.fullName || "") + " · " + (r.studentId || "")) + "</td><td>" + escapeHtml(r.subject || "") +
-          "</td><td>" + escapeHtml(r.total || "") + "</td><td>" + escapeHtml(r.verdict || "") + "</td><td>" + escapeHtml(r.graderName || "") +
+          "</td><td>" + escapeHtml(showTotal) + "</td><td>" + escapeHtml(showVerdict) + "</td><td>" + escapeHtml(r.graderName || "") +
           "</td><td>" + escapeHtml(r.timestamp || "") + edited + "</td>";
         const td = document.createElement("td");
         td.className = "actions";
