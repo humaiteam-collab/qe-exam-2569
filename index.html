@@ -1110,6 +1110,41 @@
           </div>
         </div>
 
+        <section class="card admin-section" id="oralSection">
+          <h2>ให้คะแนนสอบปากเปล่า (Oral Examination · 30%)</h2>
+          <p class="note" id="oralScheduleHead">วันพุธที่ 25 พฤศจิกายน 2569 · ห้องปัญญา (A305) โซน A ชั้น 3 คณะมนุษยศาสตร์ · ใช้เวลาประมาณ 30–45 นาทีต่อคน · ลำดับผู้เข้าสอบอาจเปลี่ยนแปลงได้ตามความเหมาะสม · กดที่ชื่อเพื่อให้คะแนน</p>
+          <div class="table-scroll"><table class="file-box-table" id="oralScheduleTable"></table></div>
+          <div class="grid-fields" style="margin-top:14px">
+            <label class="field"><span>นิสิตที่สอบปากเปล่า</span>
+              <select id="oralStudent"><option value="">— เลือกนิสิต —</option></select>
+            </label>
+            <label class="field"><span>ผู้ให้คะแนน</span><input id="oralGrader" readonly /></label>
+          </div>
+          <div class="table-scroll" style="margin-top:12px"><table class="file-box-table" id="oralForm"></table></div>
+          <div class="grid-fields" style="margin-top:12px">
+            <label class="field">
+              <span>ข้อบกพร่องร้ายแรงด้านจริยธรรมการวิจัยหรือความซื่อสัตย์ทางวิชาการ (ข้อ 5.4)</span>
+              <select id="oralEthics">
+                <option value="ok">ไม่มีข้อบกพร่องร้ายแรง</option>
+                <option value="fail">มีข้อบกพร่องร้ายแรง</option>
+              </select>
+            </label>
+          </div>
+          <label class="field" style="margin-top:12px">
+            <span>ข้อสังเกต / ข้อเสนอแนะของกรรมการ</span>
+            <textarea id="oralComment" rows="3"></textarea>
+          </label>
+          <div id="oralSummary" style="margin-top:12px"></div>
+          <div class="grade-actions">
+            <button type="button" class="btn primary" id="oralSaveBtn">บันทึกคะแนนปากเปล่า</button>
+            <button type="button" class="btn" id="oralClearBtn">ล้างแบบฟอร์ม</button>
+          </div>
+          <p class="note" id="oralSaveNote"></p>
+          <h3 style="margin-top:18px">สรุปคะแนนปากเปล่าของคณะกรรมการ</h3>
+          <p class="note">คะแนนเฉลี่ยจากกรรมการทุกท่านที่บันทึกแล้ว · ผ่าน 75 ขึ้นไป · ผ่านโดยมีเงื่อนไข 70–74 · ไม่ผ่าน ต่ำกว่า 70 (ข้อ 5.4) · คิดเป็น 30% ของคะแนนรวม (ข้อ 5.1)</p>
+          <div class="table-scroll"><table class="file-box-table" id="oralBoard"></table></div>
+        </section>
+
         <section class="card admin-section" id="fileBoxSection">
           <h2>กล่องไฟล์คำตอบของนิสิต</h2>
           <p class="note">ไฟล์ทุกไฟล์ที่นิสิตหรือกรรมการอัปโหลด (PDF รูปภาพ Word) เปิดดูหรือดาวน์โหลดได้จากที่นี่ ต้องเชื่อมต่อด้วยรหัสผู้ตรวจก่อน</p>
@@ -4393,10 +4428,262 @@
       return !!centralName && graderKey(gn) === graderKey(centralName);
     }
 
+    /* ---------- สอบปากเปล่า (Oral Examination) ----------
+       ตามแนวทาง QE: 30–45 นาทีต่อคน แบ่ง 3 ช่วง · คิดเป็น 30% ของคะแนนรวม (ข้อ 5.1) · ต้องผ่านปากเปล่า (ข้อ 5.4)
+       บันทึกลงแท็บ "คะแนน" เดิมผ่าน action "grade" (วิชา = "สอบปากเปล่า") จึงไม่ต้องอัป Apps Script ใหม่ */
+    const ORAL_SUBJECT = "สอบปากเปล่า (Oral)";
+    const ORAL_PHASES = [
+      { id: "o1", nameTh: "ช่วงที่ 1 นำเสนอ", time: "5–10 นาที", focus: "นำเสนอการวิเคราะห์และสังเคราะห์องค์ความรู้", max: 30 },
+      { id: "o2", nameTh: "ช่วงที่ 2 ซักถาม", time: "15–20 นาที", focus: "ทฤษฎี พุทธธรรม ระเบียบวิธีวิจัย และสถิติ", max: 40 },
+      { id: "o3", nameTh: "ช่วงที่ 3 วิพากษ์ / อภิปราย", time: "10–15 นาที", focus: "ความใหม่ของงานวิจัย ความเป็นไปได้ และศักยภาพในการวิจัย", max: 30 }
+    ];
+    const ORAL_SCHEDULE = [
+      { time: "13.00–13.40 น.", sids: ["6801103002", "6801103041", "6801103047"] },
+      { time: "13.40–14.40 น.", sids: ["6801103003", "6801103042", "6801103046"] },
+      { time: "14.40–15.40 น.", sids: ["6801103005", "6801103004", "6801103045"] },
+      { time: "15.40–16.40 น.", sids: ["6801103043", "6801103048"] }
+    ];
+    let oralEditingRow = null;
+    let oralBound = false;
+
+    function isOralRow(r) { return String((r && r.subject) || "").indexOf("สอบปากเปล่า") === 0; }
+    function oralRows() { return centralGrades.filter(function (r) { return r.gradeId && isOralRow(r); }); }
+    function oralNameOf(sid) {
+      const r = (config.roster || []).find(function (x) { return x.sid === sid; });
+      return r ? r.name : sid;
+    }
+    function oralTimeOf(sid) {
+      const s = ORAL_SCHEDULE.find(function (x) { return x.sids.indexOf(sid) !== -1; });
+      return s ? s.time : "";
+    }
+    function oralVerdict(total) {
+      if (total >= 75) return { code: "yes", label: "ผ่าน" };
+      if (total >= 70) return { code: "conditional", label: "ผ่านโดยมีเงื่อนไข" };
+      return { code: "no", label: "ไม่ผ่าน" };
+    }
+    function oralLevel(total) {
+      if (total >= 90) return "ดีเยี่ยม";
+      if (total >= 80) return "ดีมาก";
+      if (total >= 75) return "ดี";
+      if (total >= 60) return "ต้องปรับปรุง";
+      return "ไม่ผ่าน";
+    }
+    function oralMine(r) {
+      if (centralRole !== "grader") return false;
+      return canEditSheetGrade(r);
+    }
+
+    function oralState() {
+      let total = 0, filled = 0;
+      const scores = {};
+      ORAL_PHASES.forEach(function (p) {
+        const inp = $("oralScore-" + p.id);
+        const raw = inp ? inp.value.trim() : "";
+        let v = raw === "" ? null : Number(raw);
+        if (v != null && (isNaN(v) || v < 0)) v = 0;
+        if (v != null && v > p.max) v = p.max;
+        if (v != null) { total += v; filled++; }
+        const c = $("oralNote-" + p.id);
+        scores[p.id] = { name: p.nameTh, score: v == null ? "" : v, max: p.max, comment: c ? c.value : "" };
+      });
+      total = Math.round(total * 100) / 100;
+      const ethics = ($("oralEthics") && $("oralEthics").value) || "ok";
+      let verdict = oralVerdict(total);
+      if (ethics === "fail") verdict = { code: "no", label: "ไม่ผ่าน (ข้อบกพร่องด้านจริยธรรม)" };
+      return { scores: scores, total: total, filled: filled, ethics: ethics, verdict: verdict };
+    }
+
+    function renderOralForm() {
+      const t = $("oralForm");
+      if (!t) return;
+      let h = "<tr><th>ช่วงการสอบ</th><th>เวลา</th><th>ประเด็นการประเมิน</th><th>คะแนน</th><th>หมายเหตุ</th></tr>";
+      ORAL_PHASES.forEach(function (p) {
+        h += "<tr><td><strong>" + escapeHtml(p.nameTh) + "</strong></td><td>" + escapeHtml(p.time) + "</td><td>" + escapeHtml(p.focus) +
+          "</td><td style='white-space:nowrap'><input id='oralScore-" + p.id + "' type='number' min='0' max='" + p.max + "' step='0.5' inputmode='decimal' style='width:5.5em' /> / " + p.max +
+          "</td><td><input id='oralNote-" + p.id + "' autocomplete='off' style='width:100%' /></td></tr>";
+      });
+      h += "<tr><th colspan='3' style='text-align:right'>รวม</th><th id='oralTotalCell'>0 / 100</th><th></th></tr>";
+      t.innerHTML = h;
+      ORAL_PHASES.forEach(function (p) {
+        $("oralScore-" + p.id).addEventListener("input", updateOralSummary);
+      });
+    }
+
+    function updateOralSummary() {
+      const st = oralState();
+      if ($("oralTotalCell")) $("oralTotalCell").textContent = st.total + " / 100";
+      const box = $("oralSummary");
+      if (!box) return;
+      if (!st.filled) { box.innerHTML = "<p class='note'>กรอกคะแนนทั้ง 3 ช่วง (รวม 100 คะแนน)</p>"; return; }
+      box.innerHTML = "<p><strong>คะแนนปากเปล่า " + st.total + " / 100</strong> · ระดับ " + escapeHtml(oralLevel(st.total)) +
+        " · ผล: <strong>" + escapeHtml(st.verdict.label) + "</strong> · คิดเป็น " + (Math.round(st.total * 0.3 * 100) / 100) + " จาก 30 คะแนนของคะแนนรวม" +
+        (st.filled < ORAL_PHASES.length ? " · <span class='err'>ยังกรอกไม่ครบทุกช่วง</span>" : "") + "</p>";
+    }
+
+    function fillOralForm(rec) {
+      const scores = rec ? parseJsonSafe(rec.criterionScores, {}) : {};
+      ORAL_PHASES.forEach(function (p) {
+        const s = scores[p.id] || {};
+        if ($("oralScore-" + p.id)) $("oralScore-" + p.id).value = s.score == null ? "" : s.score;
+        if ($("oralNote-" + p.id)) $("oralNote-" + p.id).value = s.comment || "";
+      });
+      if ($("oralEthics")) $("oralEthics").value = (rec && rec.ethicsOk) || "ok";
+      if ($("oralComment")) $("oralComment").value = (rec && rec.comments) || "";
+      updateOralSummary();
+    }
+
+    function pickOralStudent(sid, row) {
+      if ($("oralStudent")) $("oralStudent").value = sid || "";
+      oralEditingRow = row || (sid ? oralRows().filter(function (r) { return r.studentId === sid && oralMine(r); }).pop() : null) || null;
+      if ($("oralGrader")) {
+        $("oralGrader").value = oralEditingRow ? oralEditingRow.graderName : (($("graderName") && $("graderName").value) || centralName || "");
+      }
+      fillOralForm(oralEditingRow);
+      const note = $("oralSaveNote");
+      if (note) {
+        note.className = "note";
+        note.textContent = !sid ? "" : oralEditingRow
+          ? "แก้ไขคะแนนปากเปล่าเดิมของ " + oralEditingRow.graderName + " (บันทึกแล้วจะอัปเดตแถวเดิมในชีต)"
+          : "ยังไม่มีคะแนนปากเปล่าของท่านสำหรับนิสิตคนนี้";
+      }
+    }
+
+    function renderOralSchedule() {
+      const t = $("oralScheduleTable");
+      if (!t) return;
+      const rows = oralRows();
+      let h = "<tr><th>เวลา</th><th>นิสิต</th><th>คะแนนของท่าน</th><th>กรรมการที่ให้คะแนนแล้ว</th></tr>";
+      ORAL_SCHEDULE.forEach(function (slot) {
+        slot.sids.forEach(function (sid, i) {
+          const mine = rows.filter(function (r) { return r.studentId === sid && oralMine(r); }).pop();
+          const n = rows.filter(function (r) { return r.studentId === sid; }).length;
+          h += "<tr>" + (i === 0 ? "<td rowspan='" + slot.sids.length + "' style='white-space:nowrap'><strong>" + escapeHtml(slot.time) + "</strong></td>" : "") +
+            "<td><a href='#' data-oral-sid='" + sid + "'>" + escapeHtml(oralNameOf(sid)) + "</a><br><span class='meta'>" + sid + "</span></td>" +
+            "<td>" + (mine ? "✅ " + escapeHtml(mine.total) + " · " + escapeHtml(mine.verdict) : "—") + "</td>" +
+            "<td>" + n + " ท่าน</td></tr>";
+        });
+      });
+      t.innerHTML = h;
+      t.querySelectorAll("a[data-oral-sid]").forEach(function (a) {
+        a.addEventListener("click", function (e) { e.preventDefault(); pickOralStudent(a.getAttribute("data-oral-sid")); });
+      });
+    }
+
+    function renderOralStudentPick() {
+      const sel = $("oralStudent");
+      if (!sel) return;
+      const cur = sel.value;
+      const seen = {};
+      let h = "<option value=''>— เลือกนิสิต —</option>";
+      ORAL_SCHEDULE.forEach(function (slot) {
+        slot.sids.forEach(function (sid) { seen[sid] = true; h += "<option value='" + sid + "'>" + escapeHtml(slot.time + " · " + oralNameOf(sid) + " (" + sid + ")") + "</option>"; });
+      });
+      (config.roster || []).forEach(function (r) {
+        if (!seen[r.sid]) h += "<option value='" + escapeHtml(r.sid) + "'>" + escapeHtml("นอกตาราง · " + r.name + " (" + r.sid + ")") + "</option>";
+      });
+      sel.innerHTML = h;
+      sel.value = cur;
+    }
+
+    function renderOralBoard() {
+      const t = $("oralBoard");
+      if (!t) return;
+      const rows = oralRows();
+      const ids = [];
+      ORAL_SCHEDULE.forEach(function (s) { s.sids.forEach(function (x) { ids.push(x); }); });
+      rows.forEach(function (r) { if (ids.indexOf(r.studentId) === -1) ids.push(r.studentId); });
+      let h = "<tr><th>นิสิต</th><th>คะแนนรายกรรมการ</th><th>จำนวน</th><th>เฉลี่ย / 100</th><th>คิดเป็น / 30</th><th>ผลปากเปล่า</th></tr>";
+      ids.forEach(function (sid) {
+        const mine = rows.filter(function (r) { return r.studentId === sid; });
+        const nums = mine.map(function (r) { return Number(r.total); }).filter(function (v) { return !isNaN(v); });
+        const avg = nums.length ? Math.round(nums.reduce(function (a, b) { return a + b; }, 0) / nums.length * 100) / 100 : null;
+        const ethicsFail = mine.some(function (r) { return r.ethicsOk === "fail"; });
+        let v = avg == null ? "ยังไม่มีคะแนน" : oralVerdict(avg).label;
+        if (ethicsFail) v += " · ⚠️ มีกรรมการระบุข้อบกพร่องด้านจริยธรรม";
+        h += "<tr><td>" + escapeHtml(oralNameOf(sid)) + "<br><span class='meta'>" + escapeHtml(sid) + "</span></td><td>" +
+          mine.map(function (r) { return escapeHtml(String(r.graderName || "").replace(/\s*\([^)]*\)\s*$/, "") + ": " + r.total); }).join("<br>") +
+          "</td><td>" + mine.length + "</td><td>" + (avg == null ? "—" : avg) + "</td><td>" + (avg == null ? "—" : Math.round(avg * 0.3 * 100) / 100) +
+          "</td><td>" + escapeHtml(v) + "</td></tr>";
+      });
+      t.innerHTML = h;
+    }
+
+    function renderOralSection() {
+      const sec = $("oralSection");
+      if (!sec) return;
+      if (!oralBound) {
+        oralBound = true;
+        renderOralForm();
+        $("oralStudent").addEventListener("change", function () { pickOralStudent($("oralStudent").value); });
+        $("oralEthics").addEventListener("change", updateOralSummary);
+        $("oralSaveBtn").addEventListener("click", saveOralGrade);
+        $("oralClearBtn").addEventListener("click", function () { pickOralStudent(""); });
+      }
+      renderOralStudentPick();
+      renderOralSchedule();
+      renderOralBoard();
+      if (!$("oralStudent").value) updateOralSummary();
+      if ($("oralGrader") && !oralEditingRow) $("oralGrader").value = ($("graderName") && $("graderName").value) || centralName || "";
+    }
+
+    async function saveOralGrade() {
+      const note = $("oralSaveNote");
+      const sid = ($("oralStudent") && $("oralStudent").value) || "";
+      const say = function (msg, bad) { if (note) { note.className = bad ? "err" : "note"; note.textContent = msg; } };
+      if (!centralMode) return say("กรุณาเข้าระบบด้วยรหัสผู้ตรวจก่อน คะแนนปากเปล่าบันทึกลงชีตเท่านั้น", true);
+      if (!/^\d{10}$/.test(sid)) return say("กรุณาเลือกนิสิตก่อน", true);
+      const st = oralState();
+      if (st.filled < ORAL_PHASES.length) return say("กรุณากรอกคะแนนให้ครบทั้ง 3 ช่วง", true);
+      const graderName = ($("oralGrader") && $("oralGrader").value || "").trim();
+      if (!graderName && centralRole !== "grader") return say("กรุณาระบุชื่อผู้ให้คะแนนที่ช่องด้านบนของหน้า", true);
+      const body = {
+        action: "grade",
+        adminKey: getAdminKey(),
+        graderName: graderName,
+        graderRole: ($("graderRole") && $("graderRole").value || "").trim() || "กรรมการสอบ",
+        studentId: sid,
+        fullName: oralNameOf(sid),
+        subject: ORAL_SUBJECT,
+        total: String(st.total),
+        verdict: st.verdict.label,
+        categoryChecks: "[]",
+        criterionScores: JSON.stringify(st.scores),
+        comments: ($("oralComment") && $("oralComment").value) || "",
+        oralPass: st.verdict.code,
+        ethicsOk: st.ethics,
+        gradeId: oralEditingRow ? oralEditingRow.gradeId : ""
+      };
+      const btn = $("oralSaveBtn");
+      if (btn) btn.disabled = true;
+      say("กำลังบันทึก...");
+      try {
+        const res = await postApps(body);
+        if (!res || !res.ok) return say("บันทึกไม่สำเร็จ: " + ((res && res.error) || "ไม่ทราบสาเหตุ"), true);
+        const stamp = fmtNow();
+        if (oralEditingRow) {
+          Object.assign(oralEditingRow, body, { graderName: oralEditingRow.graderName, editedAt: stamp, editedBy: centralRole === "admin" ? "แอดมิน" : graderName });
+        } else {
+          const row = Object.assign({}, body, { timestamp: stamp, gradeId: res.gradeId || "", editedAt: "", editedBy: "", editLog: "" });
+          if (centralRole === "grader") row.graderName = centralName + " (" + getAdminKey() + ")";
+          delete row.action; delete row.adminKey;
+          centralGrades.push(row);
+          oralEditingRow = row;
+        }
+        renderSheetGrades();
+        say("บันทึกคะแนนปากเปล่าแล้ว (" + st.total + " / 100 · " + st.verdict.label + ") ลงแท็บ \"คะแนน\" แถวที่ " + res.row);
+        showToast("บันทึกคะแนนปากเปล่าของ " + oralNameOf(sid) + " แล้ว");
+      } catch (err) {
+        say("บันทึกไม่สำเร็จ: " + (err && err.message ? err.message : err), true);
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
     function renderSheetGrades() {
       const box = $("sheetGradeList");
       if (!box) return;
       const note = $("sheetGradeNote");
+      renderOralSection();
       if (!centralMode) {
         box.innerHTML = "";
         return;
@@ -4427,7 +4714,10 @@
           b.type = "button";
           b.className = "btn small";
           b.textContent = "แก้ไขคะแนน";
-          b.addEventListener("click", function () { editSheetGrade(r); });
+          b.addEventListener("click", function () {
+            if (isOralRow(r)) { pickOralStudent(r.studentId, r); if ($("oralSection")) $("oralSection").scrollIntoView({ behavior: "smooth", block: "start" }); }
+            else editSheetGrade(r);
+          });
           td.appendChild(b);
         } else {
           td.innerHTML = "<span class='meta'>ดูได้อย่างเดียว</span>";
