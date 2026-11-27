@@ -3428,7 +3428,7 @@
         const data = await postApps({ action: "list", adminKey: key });
         if (data && data.ok && Array.isArray(data.submissions)) {
           const serverName = data.grader && data.grader.role === "grader" ? data.grader.name : "";
-          if (serverName && name && name !== serverName) {
+          if (serverName && name && name !== serverName && graderKey(name) !== graderKey(serverName)) {
             if (err) err.textContent = "รหัสผู้ตรวจนี้เป็นของ " + serverName + " ไม่ตรงกับชื่อที่เลือก";
             if (note) note.textContent = "";
             return false;
