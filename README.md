@@ -9,7 +9,7 @@
 
 ## หลังบ้าน (Google Apps Script)
 
-โค้ดอยู่ที่ `apps-script/Code.gs` ผูกกับ Google Sheet "QE-2569"
+โค้ดอยู่ที่ `Code.gs` ผูกกับ Google Sheet "QE-2569"
 
 | แท็บในชีต | เก็บอะไร |
 |---|---|
@@ -21,7 +21,7 @@
 ### ติดตั้ง / อัปเดต
 
 1. เปิดชีต QE-2569 → ส่วนขยาย → Apps Script
-2. วางโค้ดจาก `apps-script/Code.gs` แทนโค้ดเดิมทั้งหมด แล้วบันทึก
+2. วางโค้ดจาก `Code.gs` แทนโค้ดเดิมทั้งหมด แล้วบันทึก
 3. ตรวจว่า Project Settings → Script properties มี `ADMIN_KEY` (ใช้ค่าเดิมได้)
 4. เลือกฟังก์ชัน `setup` แล้วกด Run หนึ่งครั้ง และอนุญาตสิทธิ์ Google Drive
 5. Deploy → Manage deployments → แก้ไข deployment เดิม → Version: **New version** → Deploy

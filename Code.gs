@@ -13,6 +13,7 @@
  *   "getFile"      [ADMIN_KEY] กรรมการเปิดดูไฟล์แนบ (ส่งกลับเป็น base64)
  *   "manualSubmit" [ADMIN_KEY] กรรมการบันทึกคำตอบของนิสิตที่เขียนด้วยมือ → แท็บคำตอบ
  *   "grade"        [ADMIN_KEY] กรรมการบันทึกคะแนน → แท็บ "คะแนน"
+ *   "buildSummary" [รหัสผู้ตรวจ/ADMIN_KEY] สร้างแท็บ "สรุปตรวจ" ใหม่: นิสิต 1 แถว คำตอบรวมตามหมวด (ไม่แก้แถวเดิม)
  *
  * สิทธิ์: ADMIN_KEY = ผู้ดูแล (ทำได้ทุกอย่าง) · รหัสผู้ตรวจ (เช่น 6901) = กรรมการ
  *        กรรมการดึงคำตอบ เปิดไฟล์ ให้คะแนน นำเข้าคำตอบเขียนมือได้ แต่เผยแพร่การตั้งค่าไม่ได้
@@ -23,7 +24,7 @@
  *   (ไม่บังคับ) UPLOAD_FOLDER_ID = รหัสโฟลเดอร์ Drive ที่จะเก็บไฟล์ ถ้าไม่ใส่ ระบบสร้างโฟลเดอร์ให้เอง
  */
 
-var VERSION = 4;
+var VERSION = 5;
 var TZ = "Asia/Bangkok";
 var MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 var SUBMIT_SHEET = "ชีต1";
@@ -31,6 +32,7 @@ var GRADE_SHEET = "คะแนน";
 var FILE_SHEET = "ไฟล์แนบ";
 var CONFIG_SHEET = "ตั้งค่า";
 var DRAFT_SHEET = "ร่างคำตอบ";
+var SUMMARY_SHEET = "สรุปตรวจ";
 var UPLOAD_FOLDER_NAME = "QE-2569 ไฟล์แนบคำตอบ";
 var CONFIG_CHUNK = 40000;
 
@@ -147,6 +149,7 @@ function doPost(e) {
       case "getFile": requireKey_(body); return json_(getFile_(body));
       case "manualSubmit": requireKey_(body); return json_(submit_(body, true));
       case "grade": return json_(grade_(body, requireKey_(body)));
+      case "buildSummary": requireKey_(body); return json_(buildSummary_());
       default: return json_({ ok: false, error: "ไม่รู้จัก action: " + action });
     }
   } catch (err) {
@@ -220,7 +223,11 @@ function grade_(body, who) {
 
   if (existing) {
     var old = existing.data;
-    if (who.role !== "admin" && old.graderName.indexOf(who.name) !== 0) {
+    var mine = old.graderName.indexOf(who.name) === 0 ||
+      old.graderName.indexOf("(" + who.code + ")") !== -1 ||
+      old.graderName.indexOf("(" + who.code + "-") !== -1 ||   // รหัสรูปแบบเดิม เช่น (69xx-xxxx)
+      nameKey_(old.graderName) === nameKey_(who.name);         // คนเดียวกัน แต่เขียนคำนำหน้าต่างกัน
+    if (who.role !== "admin" && !mine) {
       throw new Error("แก้ได้เฉพาะคะแนนที่ท่านให้เอง (แอดมินแก้ได้ทุกรายการ)");
     }
     // แก้เฉพาะช่องที่ส่งมา ช่องที่ไม่ได้ส่งมาคงค่าเดิมไว้
@@ -250,7 +257,7 @@ function list_(who) {
   return {
     ok: true,
     version: VERSION,
-    grader: { role: who.role, name: who.name || "", code: who.code || "" },
+    grader: { role: who.role, name: who.name || "", code: who.code || "", cat: who.cat == null ? null : who.cat },
     uploadFolderUrl: uploadFolderUrl_(),
     submissions: readRows_(sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true), SUBMIT_COLUMNS),
     files: readRows_(sheet_(FILE_SHEET, FILE_COLUMNS, false), FILE_COLUMNS),
@@ -322,7 +329,11 @@ function getFile_(body) {
 
 function getConfig_(body) {
   var graders = getGraders_();
-  var out = { ok: true, version: VERSION, graderCount: graders.length, config: null, graderNames: graders.map(function (g) { return g.name; }) };
+  var out = {
+    ok: true, version: VERSION, graderCount: graders.length, config: null,
+    graderNames: graders.map(function (g) { return g.name; }),
+    graderGroups: graders.map(function (g) { return { name: g.name, cat: g.cat == null ? null : Number(g.cat) }; })
+  };
   if (isAdmin_(body)) out.graders = getGraders_();
   var sh = SpreadsheetApp.getActive().getSheetByName(CONFIG_SHEET);
   if (!sh || sh.getLastRow() < 2) return out;
@@ -343,7 +354,11 @@ function saveConfig_(body) {
   var text = JSON.stringify(parsed);
   if (Array.isArray(body.graders)) {
     var clean = body.graders.filter(function (g) { return g && String(g.code || "").trim() && String(g.name || "").trim(); })
-      .map(function (g) { return { code: String(g.code).trim(), name: String(g.name).trim() }; });
+      .map(function (g) {
+        var o = { code: String(g.code).trim(), name: String(g.name).trim() };
+        if (g.cat != null && g.cat !== "") o.cat = Number(g.cat);
+        return o;
+      });
     if (clean.length) PropertiesService.getScriptProperties().setProperty("GRADERS", JSON.stringify(clean));
   }
   var lock = LockService.getScriptLock();
@@ -364,7 +379,137 @@ function saveConfig_(body) {
   }
 }
 
+/* ---------- แท็บสรุปตรวจ ---------- */
+
+var BANK_CAT = { "1.1": 1, "1.2": 1, "2.1": 2, "2.2": 2, "2.3": 2, "3.1": 3, "3.2": 3, "3.3": 3 };
+var CAT_NAME = { 1: "หมวด 1 แนวคิดและทฤษฎีทางจิตวิทยา", 2: "หมวด 2 พุทธจิตวิทยาประยุกต์", 3: "หมวด 3 วิธีวิทยาการวิจัยและการสร้างองค์ความรู้" };
+
+function parseQuestionSet_(s) {
+  var out = {};
+  String(s || "").split(/[;|]/).forEach(function (p) {
+    var m = p.replace(/^\s+|\s+$/g, "").match(/^S(\d)\s*=\s*([\w.]+)/);
+    if (m) out[m[1]] = m[2];
+  });
+  return out;
+}
+
+// แถวที่ระบบสร้างขึ้น (ฉบับรวม / สถานะ) ไม่ใช่คำตอบต้นฉบับ
+function isDerivedRow_(r) {
+  return /^(MERGED-|PAPER-|ABSENT-|REPLACEMENT-|LOST-)/.test(String(r.sessionId || "")) || String(r.submitStatus || "").indexOf("ห้ามให้คะแนน") !== -1;
+}
+
+// รวบรวมทุกแถวของนิสิตแต่ละคน จัดคำตอบตามหมวดของโจทย์ที่นิสิตได้จริง แล้วเขียนแท็บ "สรุปตรวจ" ใหม่ทั้งแท็บ
+function buildSummary_() {
+  var subs = readRows_(sheet_(SUBMIT_SHEET, SUBMIT_COLUMNS, true), SUBMIT_COLUMNS);
+  var files = readRows_(sheet_(FILE_SHEET, FILE_COLUMNS, false), FILE_COLUMNS);
+  var cfg = getConfig_({}).config || {};
+  var current = {};
+  var dates = [];
+  (cfg.questions || []).forEach(function (q, i) {
+    current[i + 1] = q.bankId || "";
+    if (q.date) dates.push(String(q.date));
+  });
+  dates.sort();
+  var examStart = dates[0] || "";
+  var roster = (cfg.roster || []).map(function (r) { return { sid: String(r.sid), name: String(r.name) }; });
+  var seen = {};
+  roster.forEach(function (r) { seen[r.sid] = true; });
+  subs.concat(files).forEach(function (r) {
+    var id = String(r.studentId || "");
+    if (/^\d{10}$/.test(id) && !/^0000/.test(id) && !seen[id]) { seen[id] = true; roster.push({ sid: id, name: r.fullName || "" }); }
+  });
+
+  var head = ["รหัสนักศึกษา", "ชื่อ-นามสกุล", "สถานะ",
+    "คำตอบ " + CAT_NAME[1], "ข้อที่ได้ (หมวด 1)", "ไฟล์แนบ (หมวด 1)",
+    "คำตอบ " + CAT_NAME[2], "ข้อที่ได้ (หมวด 2)", "ไฟล์แนบ (หมวด 2)",
+    "คำตอบ " + CAT_NAME[3], "ข้อที่ได้ (หมวด 3)", "ไฟล์แนบ (หมวด 3)",
+    "ส่งกี่ครั้ง", "ประวัติการส่ง (เวลา · อุปกรณ์ · เซสชัน · โจทย์)", "อัปเดตแท็บนี้เมื่อ"];
+  var stamp = now_();
+  var out = [head];
+  roster.forEach(function (st) {
+    var mine = subs.filter(function (r) { return r.studentId === st.sid; });
+    var raw = mine.filter(function (r) { return !isDerivedRow_(r) && (!examStart || !r.submitTime || r.submitTime >= examStart); })
+      .sort(function (a, b) { return String(a.submitTime).localeCompare(String(b.submitTime)); });
+    var flags = mine.filter(isDerivedRow_);
+    var byCat = { 1: [], 2: [], 3: [] }, qid = {};
+    raw.forEach(function (r) {
+      var set = parseQuestionSet_(r.questionSet);
+      [1, 2, 3].forEach(function (n) {
+        var t = String(r["question" + n] || "");
+        if (!t.replace(/\s/g, "")) return;
+        var b = set[n] || current[n] || "";
+        var c = BANK_CAT[b] || n;
+        byCat[c].push({ when: r.submitTime, text: t });
+        if (!qid[c]) qid[c] = b;
+      });
+    });
+    var fcat = { 1: [], 2: [], 3: [] };
+    files.filter(function (f) { return f.studentId === st.sid; }).forEach(function (f) {
+      var c = BANK_CAT[f.bankId];
+      if (!c) {
+        var row = raw.filter(function (r) { return r.sessionId === f.sessionId; })[0];
+        c = BANK_CAT[parseQuestionSet_(row && row.questionSet)[f.subject]] || Number(f.subject) || 1;
+      }
+      fcat[c].push(f.fileName + " " + f.url + (f.note ? " (" + f.note + ")" : ""));
+    });
+    var ans = {};
+    [1, 2, 3].forEach(function (c) {
+      ans[c] = byCat[c].map(function (e, i) { return i === 0 ? e.text : "\n\n----- ส่งเพิ่มเติมเมื่อ " + e.when + " -----\n\n" + e.text; }).join("");
+    });
+    var have = [1, 2, 3].filter(function (c) { return ans[c] || fcat[c].length; });
+    var mode = function (m) { return flags.some(function (r) { return r.submissionMode === m; }); };
+    var lost = flags.some(function (r) { return /^(REPLACEMENT-|LOST-)/.test(String(r.sessionId)) || String(r.submitStatus).indexOf("ห้ามให้คะแนน") !== -1; });
+    var missing = [1, 2, 3].filter(function (c) { return have.indexOf(c) === -1; });
+    var status;
+    if (mode("ไม่มาสอบ")) status = "ไม่มาสอบ";
+    else if (!missing.length) status = "ครบ 3 หมวด";
+    else if (mode("กระดาษ")) status = "สอบแบบเขียนในกระดาษ: รอไฟล์สแกนหมวด " + missing.join(", ");
+    else if (lost) status = "เข้าสอบแล้ว ข้อมูลคำตอบสูญหายจากระบบ (หมวด " + missing.join(", ") + ")";
+    else status = "ขาดหมวด " + missing.join(", ");
+    var hist = raw.map(function (r) { return r.submitTime + " · " + r.device + " · " + r.sessionId + " · " + r.questionSet; }).join("\n");
+    out.push([st.sid, st.name, status,
+      ans[1], qid[1] || "", fcat[1].join("\n"),
+      ans[2], qid[2] || "", fcat[2].join("\n"),
+      ans[3], qid[3] || "", fcat[3].join("\n"),
+      String(raw.length), hist, stamp]);
+  });
+
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var ss = SpreadsheetApp.getActive();
+    var sh = ss.getSheetByName(SUMMARY_SHEET) || ss.insertSheet(SUMMARY_SHEET);
+    sh.clear();
+    var values = out.map(function (row) { return row.map(safeCell_); });
+    var rng = sh.getRange(1, 1, values.length, head.length);
+    rng.setNumberFormat("@").setValues(values);
+    try {
+      sh.setFrozenRows(1);
+      sh.setFrozenColumns(3);
+      sh.getRange(1, 1, 1, head.length).setFontWeight("bold").setBackground("#1f6b3a").setFontColor("#ffffff").setWrap(true);
+      rng.setVerticalAlignment("top");
+      sh.getRange(2, 1, Math.max(values.length - 1, 1), head.length).setWrap(true);
+      [110, 220, 230, 420, 90, 220, 420, 90, 220, 420, 90, 220, 70, 380, 140].forEach(function (w, i) { sh.setColumnWidth(i + 1, w); });
+      for (var r = 2; r <= values.length; r++) {
+        var s = String(values[r - 1][2]);
+        sh.getRange(r, 3).setBackground(s.indexOf("ครบ") === 0 ? "#e7f3ea" : s === "ไม่มาสอบ" ? "#eeeeee" : "#fdecec");
+      }
+    } catch (err) {}
+    return { ok: true, sheet: SUMMARY_SHEET, students: values.length - 1, updatedAt: stamp };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
 /* ---------- helpers ---------- */
+
+// ชื่อที่ใช้เทียบว่าเป็นคนเดียวกัน: ข้อความหลัง "ดร." คำแรก (ไม่สนคำนำหน้า เช่น รศ.ดร. / รองศาสตราจารย์ ดร.)
+function nameKey_(name) {
+  var s = String(name || "").replace(/\s*\(.*\)\s*$/, "");
+  var i = s.lastIndexOf("ดร.");
+  var rest = (i >= 0 ? s.slice(i + 3) : s).replace(/^\s+|\s+$/g, "");
+  return rest.split(/\s+/)[0] || rest;
+}
 
 function getGraders_() {
   var raw = PropertiesService.getScriptProperties().getProperty("GRADERS");
@@ -395,7 +540,7 @@ function requireKey_(body) {
   var code = String(body.adminKey || "").trim();
   if (code) {
     var g = getGraders_().filter(function (x) { return String(x.code) === code; })[0];
-    if (g) return { role: "grader", name: g.name, code: g.code };
+    if (g) return { role: "grader", name: g.name, code: g.code, cat: g.cat == null ? null : Number(g.cat) };
   }
   throw new Error("รหัสผู้ตรวจไม่ถูกต้อง");
 }
