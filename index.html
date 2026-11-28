@@ -987,6 +987,26 @@
         <p class="note"><strong>กู้คืน:</strong> ถ้านิสิตทำข้อสอบในเครื่องนี้แต่ไม่ได้กดส่ง ให้เปิดหน้า #admin บนเครื่องนั้น (เบราว์เซอร์เดียวกับที่นิสิตใช้) แล้วกด "ส่งคำตอบนี้เข้าชีต" คำตอบจะเข้าแท็บคำตอบโดยระบุว่า "กู้คืนจากเครื่อง" และกรรมการเห็นรวมกับคำตอบอื่นของนิสิตคนนั้น<br><strong>รีเซ็ต:</strong> ใช้เมื่อนิสิตเริ่มสอบแล้วแต่ต้องแก้ข้อมูลหรือเริ่มใหม่ ให้เปิดหน้า #admin บนเครื่องที่นิสิตใช้สอบ แล้วกดรีเซ็ตรายการของนิสิตคนนั้น คำตอบที่ยังไม่ส่งในเครื่องนี้จะถูกลบ (ข้อมูลที่ส่งเข้าชีตแล้วให้แก้ใน Google Sheet)</p>
         <div id="deviceProgressList"></div>
       </section>
+      <section class="card admin-section" id="manualSection">
+        <h2>นำเข้าคำตอบแบบเขียนด้วยมือ / อัปโหลดไฟล์แทนนิสิต</h2>
+        <p class="note">สำหรับนิสิตที่เขียนตอบในกระดาษ ให้สแกนหรือถ่ายรูปแล้วอัปโหลดตามวิชา ระบบจะเพิ่มแถวในชีต (รูปแบบการส่ง = เขียนด้วยมือ) และเก็บไฟล์ใน Google Drive ใช้กับนิสิตที่ส่งออนไลน์แล้วได้ด้วย (เพิ่มไฟล์อย่างเดียว ไม่ต้องติ๊กสร้างแถว) ใช้รหัส ADMIN_KEY ในช่อง "เผยแพร่" ด้านล่าง (หรือที่เชื่อมต่อไว้ในแท็บให้คะแนน)</p>
+        <label class="field" style="margin-bottom:10px"><span>เลือกนิสิตจากรายชื่อ</span><select id="manRosterPick"></select></label>
+        <div class="grid-fields">
+          <label class="field"><span>รหัสนักศึกษา (10 หลัก)</span><input id="manSid" inputmode="numeric" maxlength="10" autocomplete="off" /></label>
+          <label class="field"><span>ชื่อ-นามสกุล</span><input id="manName" /></label>
+          <label class="field"><span>รุ่น</span><input id="manCohort" list="cohorts" placeholder="รุ่น 14" /></label>
+          <label class="field"><span>ระดับ</span>
+            <select id="manLevel"><option value="ป.เอก">ป.เอก</option></select>
+          </label>
+          <label class="field"><span>วันที่สอบ</span><input type="date" id="manDate" /></label>
+        </div>
+        <label class="guide-ack"><input type="checkbox" id="manCreateRow" checked /> <span>สร้างแถวคำตอบใหม่ในชีต (นิสิตส่งกระดาษ ไม่ได้ส่งออนไลน์)</span></label>
+        <div id="manSubjects" style="margin-top:12px"></div>
+        <div class="grade-actions">
+          <button type="button" class="btn primary" id="manSubmitBtn">บันทึกเข้าระบบ</button>
+        </div>
+        <p class="note" id="manNote"></p>
+      </section>
       <section class="card admin-section" id="rubricEditorSection">
         <h2>แก้ไขเกณฑ์การประเมิน (ค่าเริ่มต้นจากเอกสารแนวทาง QE)</h2>
         <p class="note">ปรับเกณฑ์ ตัวบรรยาย น้ำหนัก และเกณฑ์ผ่านได้ แล้วกดบันทึกเกณฑ์ ค่าเริ่มต้นมาจากข้อ 2, ข้อ 5.1, ข้อ 5.2, ข้อ 5.3 และข้อ 5.4 ของเอกสารแนวทางการสอบวัดคุณสมบัติ (QE) สาขาวิชาพุทธจิตวิทยา · แก้ได้เฉพาะแอดมิน</p>
@@ -1190,26 +1210,6 @@
           <div id="fbViewer"></div>
         </section>
 
-        <section class="card admin-section admin-only" id="manualSection">
-          <h2>นำเข้าคำตอบแบบเขียนด้วยมือ / อัปโหลดไฟล์แทนนิสิต</h2>
-          <p class="note">สำหรับนิสิตที่เขียนตอบในกระดาษ ให้สแกนหรือถ่ายรูปแล้วอัปโหลดตามวิชา ระบบจะเพิ่มแถวในชีต (รูปแบบการส่ง = เขียนด้วยมือ) และเก็บไฟล์ใน Google Drive ใช้กับนิสิตที่ส่งออนไลน์แล้วได้ด้วย (เพิ่มไฟล์อย่างเดียว ไม่ต้องติ๊กสร้างแถว) ต้องเชื่อมต่อด้วย ADMIN_KEY ก่อน</p>
-          <label class="field" style="margin-bottom:10px"><span>เลือกนิสิตจากรายชื่อ</span><select id="manRosterPick"></select></label>
-          <div class="grid-fields">
-            <label class="field"><span>รหัสนักศึกษา (10 หลัก)</span><input id="manSid" inputmode="numeric" maxlength="10" autocomplete="off" /></label>
-            <label class="field"><span>ชื่อ-นามสกุล</span><input id="manName" /></label>
-            <label class="field"><span>รุ่น</span><input id="manCohort" list="cohorts" placeholder="รุ่น 14" /></label>
-            <label class="field"><span>ระดับ</span>
-              <select id="manLevel"><option value="ป.เอก">ป.เอก</option></select>
-            </label>
-            <label class="field"><span>วันที่สอบ</span><input type="date" id="manDate" /></label>
-          </div>
-          <label class="guide-ack"><input type="checkbox" id="manCreateRow" checked /> <span>สร้างแถวคำตอบใหม่ในชีต (นิสิตส่งกระดาษ ไม่ได้ส่งออนไลน์)</span></label>
-          <div id="manSubjects" style="margin-top:12px"></div>
-          <div class="grade-actions">
-            <button type="button" class="btn primary" id="manSubmitBtn">บันทึกเข้าระบบ</button>
-          </div>
-          <p class="note" id="manNote"></p>
-        </section>
 
         <section class="card admin-section">
           <h2>คะแนนที่บันทึกในชีตแล้ว (ทุกกรรมการ)</h2>
@@ -3284,7 +3284,8 @@
     }
 
     function getAdminKey() {
-      return getCommitteeKey() || (($("gradeAdminKey") && $("gradeAdminKey").value) || "");
+      return getCommitteeKey() || (($("gradeAdminKey") && $("gradeAdminKey").value) || "") ||
+        (isAdminRoute() && $("publishKey") ? $("publishKey").value.trim() : "");
     }
 
     function mountGradeRoot(target) {
@@ -3593,6 +3594,7 @@
     function renderAdmin() {
       applyTheme();
       renderRubricEditor();
+      renderManualSubjects();
       $("colorPrimary").value = config.theme.primary;
       $("colorAccent").value = config.theme.accent;
       const box = $("presets");
@@ -5143,6 +5145,7 @@
         if ($("manName")) $("manName").value = any.fullName || ($("gradeFullName") && $("gradeFullName").value) || "";
         if (any.cohort && $("manCohort")) $("manCohort").value = any.cohort;
         if ($("manCreateRow")) $("manCreateRow").checked = false;
+        if (isAdminRoute()) setAdminTab("settings");
         if ($("manualSection")) $("manualSection").scrollIntoView({ behavior: "smooth", block: "start" });
       });
       box.appendChild(up);
@@ -5620,7 +5623,7 @@
       const sid = ($("manSid").value || "").trim();
       const name = ($("manName").value || "").trim();
       const createRow = $("manCreateRow").checked;
-      if (!key) { note.className = "err"; note.textContent = "ต้องเชื่อมต่อด้วย ADMIN_KEY ก่อน"; return; }
+      if (!key) { note.className = "err"; note.textContent = "กรุณากรอก ADMIN_KEY ในช่องเผยแพร่ หรือเชื่อมต่อในแท็บให้คะแนนก่อน"; return; }
       if (!/^\d{10}$/.test(sid) || !name) { note.className = "err"; note.textContent = "กรุณากรอกรหัสนักศึกษา 10 หลักและชื่อ-นามสกุล"; return; }
       const grader = ($("graderName") && $("graderName").value.trim()) || "กรรมการ";
       const btn = $("manSubmitBtn");
