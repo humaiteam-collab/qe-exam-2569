@@ -5086,7 +5086,12 @@
         mnote.textContent = "แสดงฉบับรวม: คำตอบจากทุกครั้งที่ส่ง เรียงตามข้อสอบปัจจุบัน (ช่อง 1 = หมวด 1, ช่อง 2 = หมวด 2, ช่อง 3 = หมวด 3) · แถวเดิมยังเก็บไว้ในชีต";
         box.appendChild(mnote);
       }
-      if (data.lost) {
+      // เตือนเฉพาะเมื่อยังขาดคำตอบอยู่ ถ้านิสิตส่งย้อนหลังครบทุกหมวดแล้วไม่ต้องเตือน
+      const lostStillMissing = data.lost && [1, 2, 3].some(function (c) {
+        return !(data.byCat[c] || []).some(function (x) { return x.text.trim(); }) &&
+          !data.files.some(function (f) { return Number(f.cat) === c; });
+      });
+      if (lostStillMissing) {
         const lnote = document.createElement("p");
         lnote.className = "banner show";
         lnote.style.display = "block";
