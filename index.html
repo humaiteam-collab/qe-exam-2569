@@ -411,6 +411,19 @@
     }
     .grade-gate { max-width: 520px; margin: 24px auto; }
     #gradeRoot.committee-session #gradeKeySection { display: none; }
+    /* งานของแอดมินเท่านั้น: ซ่อนจากกรรมการที่เข้าผ่าน #grade */
+    #gradeRoot.committee-session .admin-only { display: none !important; }
+    /* คำตอบของนิสิตแสดงเต็มหน้า ไม่ตัดความสูง */
+    #answerPane .answer-read { max-height: none; overflow: visible; }
+    /* ตารางคะแนนในชีต: ให้ข้อความตัดบรรทัดในช่องของตัวเอง ไม่ล้นทับช่องข้าง ๆ */
+    .file-box-table.sheet-grade-table { min-width: 760px; }
+    .file-box-table.sheet-grade-table td { white-space: normal; max-width: none; overflow-wrap: break-word; word-break: normal; }
+    .file-box-table.sheet-grade-table td:nth-child(1) { min-width: 140px; }
+    .file-box-table.sheet-grade-table td:nth-child(2) { min-width: 170px; }
+    .file-box-table.sheet-grade-table td:nth-child(3) { min-width: 80px; white-space: nowrap; }
+    .file-box-table.sheet-grade-table td:nth-child(4) { min-width: 140px; }
+    .file-box-table.sheet-grade-table td:nth-child(5) { min-width: 130px; }
+    .file-box-table.sheet-grade-table td:nth-child(6) { min-width: 130px; }
     .entry-actions { margin-top: 16px; }
     .candidate-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 14px; }
     .candidate-row .candidate-bar { margin-top: 0; flex: 1 1 260px; }
@@ -503,7 +516,7 @@
     }
     .grade-layout {
       display: grid;
-      grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.4fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: 16px;
       align-items: start;
     }
@@ -974,6 +987,16 @@
         <p class="note"><strong>กู้คืน:</strong> ถ้านิสิตทำข้อสอบในเครื่องนี้แต่ไม่ได้กดส่ง ให้เปิดหน้า #admin บนเครื่องนั้น (เบราว์เซอร์เดียวกับที่นิสิตใช้) แล้วกด "ส่งคำตอบนี้เข้าชีต" คำตอบจะเข้าแท็บคำตอบโดยระบุว่า "กู้คืนจากเครื่อง" และกรรมการเห็นรวมกับคำตอบอื่นของนิสิตคนนั้น<br><strong>รีเซ็ต:</strong> ใช้เมื่อนิสิตเริ่มสอบแล้วแต่ต้องแก้ข้อมูลหรือเริ่มใหม่ ให้เปิดหน้า #admin บนเครื่องที่นิสิตใช้สอบ แล้วกดรีเซ็ตรายการของนิสิตคนนั้น คำตอบที่ยังไม่ส่งในเครื่องนี้จะถูกลบ (ข้อมูลที่ส่งเข้าชีตแล้วให้แก้ใน Google Sheet)</p>
         <div id="deviceProgressList"></div>
       </section>
+      <section class="card admin-section" id="rubricEditorSection">
+        <h2>แก้ไขเกณฑ์การประเมิน (ค่าเริ่มต้นจากเอกสารแนวทาง QE)</h2>
+        <p class="note">ปรับเกณฑ์ ตัวบรรยาย น้ำหนัก และเกณฑ์ผ่านได้ แล้วกดบันทึกเกณฑ์ ค่าเริ่มต้นมาจากข้อ 2, ข้อ 5.1, ข้อ 5.2, ข้อ 5.3 และข้อ 5.4 ของเอกสารแนวทางการสอบวัดคุณสมบัติ (QE) สาขาวิชาพุทธจิตวิทยา · แก้ได้เฉพาะแอดมิน</p>
+        <div id="rubricEditor"></div>
+        <div class="grade-actions">
+          <button type="button" class="btn primary" id="rubricSaveBtn">บันทึกเกณฑ์</button>
+          <button type="button" class="btn" id="rubricResetBtn">รีเซ็ตเกณฑ์เป็นค่าจากเอกสาร</button>
+        </div>
+        <p class="note" id="rubricSaveNote"></p>
+      </section>
       <section class="card admin-section" id="publishSection">
         <h2>บันทึกและเผยแพร่ให้นิสิตทุกเครื่อง</h2>
         <p class="note">ปุ่ม "บันทึกในเครื่องนี้" เก็บไว้เฉพาะเบราว์เซอร์นี้ ส่วน "เผยแพร่" จะส่งการตั้งค่า (โจทย์ที่เลือก เวลา แนวทาง ข้อความ ธีม) ไปเก็บใน Google Sheet แท็บ "ตั้งค่า" นิสิตทุกเครื่องจะโหลดค่านี้เมื่อเปิดหน้าสอบ ต้องใช้รหัส ADMIN_KEY ของ Apps Script</p>
@@ -1115,8 +1138,9 @@
           <p class="note" id="oralScheduleHead">วันพุธที่ 25 พฤศจิกายน 2569 · ห้องปัญญา (A305) โซน A ชั้น 3 คณะมนุษยศาสตร์ · ใช้เวลาประมาณ 30–45 นาทีต่อคน · ลำดับผู้เข้าสอบอาจเปลี่ยนแปลงได้ตามความเหมาะสม · กดที่ชื่อเพื่อให้คะแนน</p>
           <div class="table-scroll"><table class="file-box-table" id="oralScheduleTable"></table></div>
           <div class="grid-fields" style="margin-top:14px">
-            <label class="field"><span>นิสิตที่สอบปากเปล่า</span>
-              <select id="oralStudent"><option value="">— เลือกนิสิต —</option></select>
+            <label class="field"><span>นิสิตที่สอบปากเปล่า (ตามที่เลือกไว้ด้านบน หรือกดชื่อในตาราง)</span>
+              <input id="oralStudentShow" readonly placeholder="— เลือกนิสิตในส่วน &quot;นิสิตที่ให้คะแนน&quot; ด้านบน —" />
+              <select id="oralStudent" class="hidden" aria-hidden="true" tabindex="-1"><option value="">— เลือกนิสิต —</option></select>
             </label>
             <label class="field"><span>ผู้ให้คะแนน</span><input id="oralGrader" readonly /></label>
           </div>
@@ -1166,7 +1190,7 @@
           <div id="fbViewer"></div>
         </section>
 
-        <section class="card admin-section" id="manualSection">
+        <section class="card admin-section admin-only" id="manualSection">
           <h2>นำเข้าคำตอบแบบเขียนด้วยมือ / อัปโหลดไฟล์แทนนิสิต</h2>
           <p class="note">สำหรับนิสิตที่เขียนตอบในกระดาษ ให้สแกนหรือถ่ายรูปแล้วอัปโหลดตามวิชา ระบบจะเพิ่มแถวในชีต (รูปแบบการส่ง = เขียนด้วยมือ) และเก็บไฟล์ใน Google Drive ใช้กับนิสิตที่ส่งออนไลน์แล้วได้ด้วย (เพิ่มไฟล์อย่างเดียว ไม่ต้องติ๊กสร้างแถว) ต้องเชื่อมต่อด้วย ADMIN_KEY ก่อน</p>
           <label class="field" style="margin-bottom:10px"><span>เลือกนิสิตจากรายชื่อ</span><select id="manRosterPick"></select></label>
@@ -1195,16 +1219,6 @@
           <div id="gradeList"></div>
         </section>
 
-        <section class="card admin-section">
-          <h2>แก้ไขเกณฑ์การประเมิน (ค่าเริ่มต้นจากเอกสารแนวทาง QE)</h2>
-          <p class="note">ปรับเกณฑ์ ตัวบรรยาย น้ำหนัก และเกณฑ์ผ่านได้ แล้วกดบันทึกเกณฑ์ ค่าเริ่มต้นมาจากข้อ 2, ข้อ 5.1, ข้อ 5.2, ข้อ 5.3 และข้อ 5.4 ของเอกสารแนวทางการสอบวัดคุณสมบัติ (QE) สาขาวิชาพุทธจิตวิทยา</p>
-          <div id="rubricEditor"></div>
-          <div class="grade-actions">
-            <button type="button" class="btn primary" id="rubricSaveBtn">บันทึกเกณฑ์</button>
-            <button type="button" class="btn" id="rubricResetBtn">รีเซ็ตเกณฑ์เป็นค่าจากเอกสาร</button>
-          </div>
-          <p class="note" id="rubricSaveNote"></p>
-        </section>
         </div>
       </div>
 
@@ -3578,6 +3592,7 @@
 
     function renderAdmin() {
       applyTheme();
+      renderRubricEditor();
       $("colorPrimary").value = config.theme.primary;
       $("colorAccent").value = config.theme.accent;
       const box = $("presets");
@@ -4468,6 +4483,26 @@
        ตามแนวทาง QE: 30–45 นาทีต่อคน แบ่ง 3 ช่วง · คิดเป็น 30% ของคะแนนรวม (ข้อ 5.1) · ต้องผ่านปากเปล่า (ข้อ 5.4)
        บันทึกลงแท็บ "คะแนน" เดิมผ่าน action "grade" (วิชา = "สอบปากเปล่า") จึงไม่ต้องอัป Apps Script ใหม่ */
     const ORAL_SUBJECT = "สอบปากเปล่า (Oral)";
+    let oralSyncedSid = "";
+
+    // ส่วนสอบปากเปล่าใช้นิสิตคนเดียวกับที่เลือกไว้ด้านบน ไม่ต้องเลือกซ้ำ
+    function syncOralToTop() {
+      const sid = (selectedSubmission && selectedSubmission.studentId) || (($("gradeSid") && $("gradeSid").value) || "").trim();
+      const v = /^\d{10}$/.test(String(sid)) ? String(sid) : "";
+      if (v === oralSyncedSid) return;
+      if (typeof pickOralStudent === "function" && $("oralStudent")) pickOralStudent(v);
+    }
+
+    // กดชื่อในตารางสอบปากเปล่า: เลือกนิสิตคนนั้นในส่วนด้านบนด้วย
+    function selectStudentFromOral(sid) {
+      const list = submissionsForStudent(sid);
+      selectedSubmission = list.length ? list[list.length - 1] : null;
+      if ($("gradeSid")) $("gradeSid").value = sid;
+      if ($("gradeFullName")) $("gradeFullName").value = (selectedSubmission && selectedSubmission.fullName) || oralNameOf(sid) || "";
+      if ($("submissionPick")) $("submissionPick").value = list.length ? "s:" + sid : "";
+      pickOralStudent(sid);
+      renderAnswerPane();
+    }
     const ORAL_PHASES = [
       { id: "o1", nameTh: "ช่วงที่ 1 นำเสนอ", time: "5–10 นาที", focus: "นำเสนอการวิเคราะห์และสังเคราะห์องค์ความรู้", max: 30 },
       { id: "o2", nameTh: "ช่วงที่ 2 ซักถาม", time: "15–20 นาที", focus: "ทฤษฎี พุทธธรรม ระเบียบวิธีวิจัย และสถิติ", max: 40 },
@@ -4569,7 +4604,18 @@
     }
 
     function pickOralStudent(sid, row) {
-      if ($("oralStudent")) $("oralStudent").value = sid || "";
+      oralSyncedSid = sid || "";
+      const sel = $("oralStudent");
+      if (sel) {
+        if (sid && !sel.querySelector('option[value="' + sid + '"]')) {
+          const o = document.createElement("option");
+          o.value = sid;
+          o.textContent = oralNameOf(sid) + " (" + sid + ")";
+          sel.appendChild(o);
+        }
+        sel.value = sid || "";
+      }
+      if ($("oralStudentShow")) $("oralStudentShow").value = sid ? oralNameOf(sid) + " · " + sid : "";
       oralEditingRow = row || (sid ? oralRows().filter(function (r) { return r.studentId === sid && oralMine(r); }).pop() : null) || null;
       if ($("oralGrader")) {
         $("oralGrader").value = oralEditingRow ? oralEditingRow.graderName : (($("graderName") && $("graderName").value) || centralName || "");
@@ -4601,7 +4647,7 @@
       });
       t.innerHTML = h;
       t.querySelectorAll("a[data-oral-sid]").forEach(function (a) {
-        a.addEventListener("click", function (e) { e.preventDefault(); pickOralStudent(a.getAttribute("data-oral-sid")); });
+        a.addEventListener("click", function (e) { e.preventDefault(); selectStudentFromOral(a.getAttribute("data-oral-sid")); });
       });
     }
 
@@ -4618,6 +4664,11 @@
         if (!seen[r.sid]) h += "<option value='" + escapeHtml(r.sid) + "'>" + escapeHtml("นอกตาราง · " + r.name + " (" + r.sid + ")") + "</option>";
       });
       sel.innerHTML = h;
+      if (cur && !sel.querySelector('option[value="' + cur + '"]')) {
+        const o = document.createElement("option");
+        o.value = cur; o.textContent = cur;
+        sel.appendChild(o);
+      }
       sel.value = cur;
     }
 
@@ -4653,11 +4704,12 @@
         $("oralStudent").addEventListener("change", function () { pickOralStudent($("oralStudent").value); });
         $("oralEthics").addEventListener("change", updateOralSummary);
         $("oralSaveBtn").addEventListener("click", saveOralGrade);
-        $("oralClearBtn").addEventListener("click", function () { pickOralStudent(""); });
+        $("oralClearBtn").addEventListener("click", function () { pickOralStudent(oralSyncedSid); });
       }
       renderOralStudentPick();
       renderOralSchedule();
       renderOralBoard();
+      syncOralToTop();
       if (!$("oralStudent").value) updateOralSummary();
       if ($("oralGrader") && !oralEditingRow) $("oralGrader").value = ($("graderName") && $("graderName").value) || centralName || "";
     }
@@ -4735,7 +4787,7 @@
         return;
       }
       const table = document.createElement("table");
-      table.className = "file-box-table";
+      table.className = "file-box-table sheet-grade-table";
       table.innerHTML = "<tr><th>นิสิต</th><th>วิชา</th><th>รวม</th><th>ผล</th><th>ผู้ให้คะแนน</th><th>บันทึก / แก้ไขล่าสุด</th><th></th></tr>";
       rows.forEach(function (r) {
         const tr = document.createElement("tr");
@@ -4756,7 +4808,7 @@
           b.className = "btn small";
           b.textContent = "แก้ไขคะแนน";
           b.addEventListener("click", function () {
-            if (isOralRow(r)) { pickOralStudent(r.studentId, r); if ($("oralSection")) $("oralSection").scrollIntoView({ behavior: "smooth", block: "start" }); }
+            if (isOralRow(r)) { selectStudentFromOral(String(r.studentId || "")); pickOralStudent(String(r.studentId || ""), r); if ($("oralSection")) $("oralSection").scrollIntoView({ behavior: "smooth", block: "start" }); }
             else editSheetGrade(r);
           });
           td.appendChild(b);
@@ -5006,6 +5058,7 @@
     function renderAnswerPane() {
       const box = $("answerPane");
       if (!box) return;
+      setTimeout(syncOralToTop, 0);
       const sid = (selectedSubmission && selectedSubmission.studentId) || ($("gradeSid") && $("gradeSid").value || "").trim();
       const data = sid ? collectStudentAnswers(sid) : null;
       if (!data || (!data.rows.length && !data.files.length && !data.absent && !data.paper && !data.lost)) {
@@ -5082,7 +5135,7 @@
       });
       const up = document.createElement("button");
       up.type = "button";
-      up.className = "btn";
+      up.className = "btn admin-only";
       up.style.marginTop = "10px";
       up.textContent = "อัปโหลดไฟล์เพิ่มให้นิสิตคนนี้";
       up.addEventListener("click", function () {
@@ -5656,24 +5709,49 @@
       if (!has) return;
       const cur = sel.value;
       sel.innerHTML = "<option value=''>— เลือกนิสิต —</option>";
-      centralSubmissions.forEach(function (s, i) {
+      // หนึ่งรายการต่อนิสิตหนึ่งคน (คำตอบทุกครั้งที่ส่งจะรวมแสดงในช่องคำตอบอยู่แล้ว)
+      const bySid = {};
+      const order = [];
+      centralSubmissions.forEach(function (s) {
+        const sid = String(s.studentId || "");
+        if (!sid) return;
+        if (!bySid[sid]) { bySid[sid] = []; order.push(sid); }
+        bySid[sid].push(s);
+      });
+      order.sort(function (a, b) { return a < b ? -1 : a > b ? 1 : 0; });
+      order.forEach(function (sid) {
+        const list = bySid[sid];
+        const last = list[list.length - 1];
+        const name = list.map(function (x) { return x.fullName; }).filter(Boolean).pop() || "";
         const opt = document.createElement("option");
-        opt.value = String(i);
-        opt.textContent = submissionMeta(s);
+        opt.value = "s:" + sid;
+        opt.textContent = [name, sid].filter(Boolean).join(" · ") +
+          (list.length > 1 ? " · ส่ง " + list.length + " ครั้ง" : "") +
+          (last.submitTime ? " · ล่าสุด " + last.submitTime : "");
         sel.appendChild(opt);
       });
-      if (centralDrafts.length) {
+      const draftSeen = {};
+      const drafts = [];
+      centralDrafts.forEach(function (d, i) {
+        const sid = String(d.studentId || "");
+        if (!sid || bySid[sid]) return;
+        if (draftSeen[sid] != null) drafts[draftSeen[sid]] = { d: d, i: i };
+        else { draftSeen[sid] = drafts.length; drafts.push({ d: d, i: i }); }
+      });
+      if (drafts.length) {
         const grp = document.createElement("optgroup");
         grp.label = "ร่างคำตอบที่ยังไม่ได้กดส่ง (สำรองอัตโนมัติ)";
-        centralDrafts.forEach(function (d, i) {
+        drafts.forEach(function (x) {
           const opt = document.createElement("option");
-          opt.value = "d" + i;
-          opt.textContent = "⚠ " + [d.fullName, d.studentId].filter(Boolean).join(" · ") + " · ร่างล่าสุด " + (d.timestamp || "");
+          opt.value = "d" + x.i;
+          opt.textContent = "⚠ " + [x.d.fullName, x.d.studentId].filter(Boolean).join(" · ") + " · ร่างล่าสุด " + (x.d.timestamp || "");
           grp.appendChild(opt);
         });
         sel.appendChild(grp);
       }
-      if (cur) sel.value = cur;
+      const sidNow = (($("gradeSid") && $("gradeSid").value) || "").trim();
+      if (cur && sel.querySelector('option[value="' + cur + '"]')) sel.value = cur;
+      else if (sidNow && bySid[sidNow]) sel.value = "s:" + sidNow;
     }
 
     function renderRubricEditor() {
@@ -6347,7 +6425,9 @@
       });
       if ($("submissionPick")) $("submissionPick").addEventListener("change", () => {
         const v = $("submissionPick").value;
-        const pick = v.charAt(0) === "d" ? centralDrafts[Number(v.slice(1))] : centralSubmissions[Number(v)];
+        let pick = null;
+        if (v.indexOf("s:") === 0) { const list = submissionsForStudent(v.slice(2)); pick = list[list.length - 1] || null; }
+        else if (v.charAt(0) === "d") pick = centralDrafts[Number(v.slice(1))];
         if (!v || !pick) return;
         selectedSubmission = pick;
         $("gradeSid").value = selectedSubmission.studentId || "";
